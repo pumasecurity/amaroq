@@ -6,8 +6,8 @@ import os
 import shutil
 import subprocess
 import tempfile
+import logging
 from asyncio.log import logger
-from distutils.log import error
 from re import A
 from shlex import split
 from subprocess import DEVNULL, PIPE, STDOUT, Popen
