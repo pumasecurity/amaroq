@@ -376,9 +376,9 @@ try:
                           sarifResults=outputFilePath, summaryResults=summaryFilePath)
     except Exception as e:
         raise e
-    # finally:
-        # if os.path.isfile(normalizedFileOutput):
-        #     os.remove(normalizedFileOutput)
+    finally:
+        if os.path.isfile(normalizedFileOutput):
+            os.remove(normalizedFileOutput)
 except subprocess.CalledProcessError as error:
     logging.error("error code", error.returncode, error.stderr)
     exit(error.returncode)
