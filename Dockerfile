@@ -18,7 +18,7 @@ LABEL maintainer="support@pumasecurity.io"
 
 # env vars
 ARG VERSION
-ENV VERSION=${VERSION}
+ENV AMAROQ_VERSION=${VERSION}
 
 # install packages
 RUN apk add --no-cache \
