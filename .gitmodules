@@ -1,0 +1,4 @@
+[submodule "sarif-sdk"]
+	path = sarif-sdk
+	url = https://github.com/pumasecurity/sarif-sdk
+	branch = release

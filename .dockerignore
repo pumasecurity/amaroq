@@ -1,0 +1,9 @@
+# directories
+**/obj/
+**/out/
+
+# files
+Dockerfile*
+**/test/
+**/.github/
+**/.gitignore
