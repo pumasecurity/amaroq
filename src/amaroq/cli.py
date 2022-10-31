@@ -1,19 +1,19 @@
+#!/usr/bin/env python3
+
 import argparse
 import datetime
 import json
 import logging
 import os
-import shutil
 import subprocess
-import tempfile
 import logging
 from asyncio.log import logger
+from importlib import metadata
 from re import A
 from shlex import split
 from subprocess import DEVNULL, PIPE, STDOUT, Popen
 from tabnanny import check
 from typing import Iterable
-
 
 # debug mode: set AMAROQ_SARIF_COMMAND (e.g. `dotnet /source/sarif-sdk/bld/bin/AnyCPU_Debug/Sarif.Multitool/netcoreapp3.1/Sarif.Multitool.dll`)
 if os.environ.get("AMAROQ_SARIF_COMMAND"):
@@ -21,12 +21,11 @@ if os.environ.get("AMAROQ_SARIF_COMMAND"):
 else:
     sarif = "sarif"
 
-if os.environ.get("AMAROQ_VERSION"):
-    version = os.environ.get("AMAROQ_VERSION")
-else:
-    version = "0.0"
-
+# default verbose
 verbose = 0
+
+# supported tool conversions
+supportedTools: Iterable[str] = ["GenericSarif", "SnykOpenSource", "Nessus"]
 
 
 def execute_cmd_not_visible(cmd):
@@ -222,166 +221,172 @@ def print_art():
     """)
 
 
-supportedTools: Iterable[str] = [
-    "GenericSarif", "SnykOpenSource", "Nessus"]
+def build_args():
+    parser = argparse.ArgumentParser(prog='amaroq',
+                                     formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     description=print_art())
 
-parser = argparse.ArgumentParser(prog='amaroq',
-                                 formatter_class=argparse.RawDescriptionHelpFormatter,
-                                 description=print_art())
+    parser.add_argument("-v", "--verbose", action='count', default=0,
+                        help="verbosity level (default: %(default)s)")
 
-parser.add_argument("-v", "--verbose", action='count', default=0,
-                    help="verbosity level (default: %(default)s)")
+    parser.add_argument('--version', action='version',
+                        version="Amaroq {version}".format(version=metadata.version('amaroq')))
 
-parser.add_argument('--version', action='version',
-                    version="Amaroq {version}".format(version=version))
+    required = parser.add_argument_group('required')
+    required.add_argument("-c", "--current", metavar='FILEPATH', type=str, required=True,
+                          help="specify a current file path")
+    required.add_argument("-o", "--output-filename", metavar='FILENAME', type=str, required=True,
+                          help="file output name")
+    required.add_argument("-d", "--output-directory", metavar='DIR', type=str, required=True,
+                          help="output directory path")
+    required.add_argument("-t", "--tool", nargs=1, metavar='TOOL', type=str, choices=supportedTools, default="GenericSarif",
+                          help="Tool format: {tools} (default: %(default)s)".format(tools='|'.join(supportedTools).strip('|')))
 
-required = parser.add_argument_group('required')
-required.add_argument("-c", "--current", metavar='FILEPATH', type=str, required=True,
-                      help="specify a current file path")
-required.add_argument("-o", "--output-filename", metavar='FILENAME', type=str, required=True,
-                      help="file output name")
-required.add_argument("-d", "--output-directory", metavar='DIR', type=str, required=True,
-                      help="output directory path")
-required.add_argument("-t", "--tool", nargs=1, metavar='TOOL', type=str, choices=supportedTools, default="GenericSarif",
-                      help="Tool format: {tools} (default: %(default)s)".format(tools='|'.join(supportedTools).strip('|')))
+    optional = parser.add_argument_group('optional')
+    optional.add_argument("-p", "--previous", nargs=1, metavar='FILEPATH',
+                          help="path a previous SARIF baseline file path")
+    optional.add_argument("-f", "--force", action="store_true",
+                          help="force overwrite output files")
+    optional.add_argument("-a", "--active-only", action="store_true",
+                          help="create an additional output file with active results")
 
-optional = parser.add_argument_group('optional')
-optional.add_argument("-p", "--previous", nargs=1, metavar='FILEPATH',
-                      help="path a previous SARIF baseline file path")
-optional.add_argument("-f", "--force", action="store_true",
-                      help="force overwrite output files")
-optional.add_argument("-a", "--active-only", action="store_true",
-                      help="create an additional output file with active results")
+    return parser.parse_args()
 
-args = parser.parse_args()
 
-try:
-    verbose = args.verbose
-    loglevel = logging.INFO
-    if verbose > 0:
-        loglevel = logging.DEBUG
-
-    # default log file location to bin directory
-    logFileName = "amaroq_{timestamp}.log".format(
-        timestamp=datetime.datetime.now().strftime("%y%m%d%H%M%S"))
-    # override to output dir if exists
-    if os.path.isdir(args.output_directory):
-        logFileName = os.path.join(os.path.abspath(
-            args.output_directory), logFileName)
-
-    logging.basicConfig(
-        level=loglevel,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[
-            logging.FileHandler(logFileName),
-            logging.StreamHandler()
-        ]
-    )
-
-    logging.debug("Arguments: \"{}\"".format(args))
-
-    # check output directory
-    if not os.path.isdir(args.output_directory):
-        logging.info("Argument error: Output directory was not found.")
-        InvalidArgs = True
-
-    # output directory
-    outputDirectory = os.path.abspath(args.output_directory)
-    logging.debug(outputDirectory)
-
-    # output file name
-    outputFilePath = os.path.join(outputDirectory, args.output_filename)
-
-    # set summary file name
-    summaryFilePath = os.path.join(outputDirectory, "summary_{basename}.json".format(
-        basename=os.path.splitext(os.path.basename(outputFilePath))[0]))
-
-    # set active file name
-    activeFileName = os.path.join(
-        outputDirectory, "active_" + args.output_filename)
-
-    # Print help for required parameters
-    InvalidArgs = False
-
-    # check output file
-    if os.path.isfile(outputFilePath):
-        if args.force:
-            if verbose > 0:
-                logging.debug("Removing: \"{}\"".format(outputFilePath))
-            os.remove(outputFilePath)
-        else:
-            logging.info("Argument error: Output file already exits.")
-            InvalidArgs = True
-
-    # check summary output file
-    if os.path.isfile(summaryFilePath):
-        if args.force:
-            if verbose > 0:
-                logging.debug("Removing: \"{}\"".format(summaryFilePath))
-            os.remove(summaryFilePath)
-        else:
-            logging.info("Argument error: Summary output file already exits.")
-            InvalidArgs = True
-
-    # check active output file
-    if args.active_only and os.path.isfile(activeFileName):
-        if args.force:
-            if verbose > 0:
-                logging.debug("Removing: \"{}\"".format(activeFileName))
-            os.remove(activeFileName)
-        else:
-            logging.info("Argument error: Active only file already exits.")
-            InvalidArgs = True
-
-    # check current results file
-    if not os.path.isfile(str(args.current)):
-        logging.info("Argument error: Current results file was not found.")
-        InvalidArgs = True
-
-    # Check if args are valid
-    if (InvalidArgs == True):
-        print("")
-        parser.print_help()
-        exit(-1)
-
-    # Smoke test sarif binary
+def main():
+    args = build_args()
     try:
-        print("Version {version}".format(version=version))
-        result = execute_command(
-            "{sarif} --version".format(sarif=sarif))
+        verbose = args.verbose
+        loglevel = logging.INFO
+        if verbose > 0:
+            loglevel = logging.DEBUG
 
-        if result != 0:
-            raise Exception("Sarif SDK version check failed")
-    except FileNotFoundError as f:
-        raise Exception("Sarif SDK was not found")
-
-    # Convert sarif log file
-    try:
-        tempFileName = "{basename}_{timestamp}.sarif".format(
-            basename=os.path.splitext(os.path.basename(outputFilePath))[0],
+        # default log file location to bin directory
+        logFileName = "amaroq_{timestamp}.log".format(
             timestamp=datetime.datetime.now().strftime("%y%m%d%H%M%S"))
-        normalizedFileOutput = os.path.join(
-            outputDirectory, tempFileName)
+        # override to output dir if exists
+        if os.path.isdir(args.output_directory):
+            logFileName = os.path.join(os.path.abspath(
+                args.output_directory), logFileName)
 
-        logging.debug(
-            "Creating temp conversion file {}".format(normalizedFileOutput))
+        logging.basicConfig(
+            level=loglevel,
+            format="%(asctime)s [%(levelname)s] %(message)s",
+            handlers=[
+                logging.FileHandler(logFileName),
+                logging.StreamHandler()
+            ]
+        )
 
-        convert_sarif_log(resultInput=args.current,
-                          sarifOutput=normalizedFileOutput, targetTool=args.tool[0])
+        logging.debug("Arguments: \"{}\"".format(args))
 
-        diff_sarif_log(baseline=args.previous,
-                       current=normalizedFileOutput, fileOutput=outputFilePath)
+        # check output directory
+        if not os.path.isdir(args.output_directory):
+            logging.info("Argument error: Output directory was not found.")
+            InvalidArgs = True
 
-        summary_sarif_log(activeResults=args.active_only,
-                          sarifResults=outputFilePath, summaryResults=summaryFilePath)
+        # output directory
+        outputDirectory = os.path.abspath(args.output_directory)
+        logging.debug(outputDirectory)
+
+        # output file name
+        outputFilePath = os.path.join(outputDirectory, args.output_filename)
+
+        # set summary file name
+        summaryFilePath = os.path.join(outputDirectory, "summary_{basename}.json".format(
+            basename=os.path.splitext(os.path.basename(outputFilePath))[0]))
+
+        # set active file name
+        activeFileName = os.path.join(
+            outputDirectory, "active_" + args.output_filename)
+
+        # Print help for required parameters
+        InvalidArgs = False
+
+        # check output file
+        if os.path.isfile(outputFilePath):
+            if args.force:
+                if verbose > 0:
+                    logging.debug("Removing: \"{}\"".format(outputFilePath))
+                os.remove(outputFilePath)
+            else:
+                logging.info("Argument error: Output file already exits.")
+                InvalidArgs = True
+
+        # check summary output file
+        if os.path.isfile(summaryFilePath):
+            if args.force:
+                if verbose > 0:
+                    logging.debug("Removing: \"{}\"".format(summaryFilePath))
+                os.remove(summaryFilePath)
+            else:
+                logging.info(
+                    "Argument error: Summary output file already exits.")
+                InvalidArgs = True
+
+        # check active output file
+        if args.active_only and os.path.isfile(activeFileName):
+            if args.force:
+                if verbose > 0:
+                    logging.debug("Removing: \"{}\"".format(activeFileName))
+                os.remove(activeFileName)
+            else:
+                logging.info("Argument error: Active only file already exits.")
+                InvalidArgs = True
+
+        # check current results file
+        if not os.path.isfile(str(args.current)):
+            logging.info("Argument error: Current results file was not found.")
+            InvalidArgs = True
+
+        # Check if args are valid
+        if (InvalidArgs == True):
+            print("")
+            parser.print_help()
+            exit(-1)
+
+        # Smoke test sarif binary
+        try:
+            print("Version {version}".format(version=version))
+            result = execute_command(
+                "{sarif} --version".format(sarif=sarif))
+
+            if result != 0:
+                raise Exception("Sarif SDK version check failed")
+        except FileNotFoundError as f:
+            raise Exception("Sarif SDK was not found")
+
+        # Convert sarif log file
+        try:
+            tempFileName = "{basename}_{timestamp}.sarif".format(
+                basename=os.path.splitext(os.path.basename(outputFilePath))[0],
+                timestamp=datetime.datetime.now().strftime("%y%m%d%H%M%S"))
+            normalizedFileOutput = os.path.join(
+                outputDirectory, tempFileName)
+
+            logging.debug(
+                "Creating temp conversion file {}".format(normalizedFileOutput))
+
+            convert_sarif_log(resultInput=args.current,
+                              sarifOutput=normalizedFileOutput, targetTool=args.tool[0])
+
+            diff_sarif_log(baseline=args.previous,
+                           current=normalizedFileOutput, fileOutput=outputFilePath)
+
+            summary_sarif_log(activeResults=args.active_only,
+                              sarifResults=outputFilePath, summaryResults=summaryFilePath)
+        except Exception as e:
+            raise e
+        finally:
+            if os.path.isfile(normalizedFileOutput):
+                os.remove(normalizedFileOutput)
+    except subprocess.CalledProcessError as error:
+        logging.error("error code", error.returncode, error.stderr)
+        exit(error.returncode)
     except Exception as e:
-        raise e
-    finally:
-        if os.path.isfile(normalizedFileOutput):
-            os.remove(normalizedFileOutput)
-except subprocess.CalledProcessError as error:
-    logging.error("error code", error.returncode, error.stderr)
-    exit(error.returncode)
-except Exception as e:
-    logging.error(e)
-    exit(9000)
+        logging.error(e)
+        exit(9000)
+
+
+if __name__ == "__main__":
+    main()

@@ -4,6 +4,6 @@
 
 # files
 Dockerfile*
-**/test/
+**/tests/
 **/.github/
 **/.gitignore

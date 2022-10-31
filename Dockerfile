@@ -6,7 +6,6 @@ FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 # copy source files
 WORKDIR /build
 COPY ./sarif-sdk/ ./
-COPY ./bin/amaroq.py ./bin/
 
 # restore and build binary
 RUN dotnet restore ./src/Sarif.Multitool/Sarif.Multitool.csproj
@@ -31,6 +30,11 @@ ENV DOTNET_BUNDLE_EXTRACT_BASE_DIR=${DOTNET_BUNDLE_EXTRACT_BASE_DIR}
 
 # copy sarif tooling
 COPY --from=build /build/bin/Sarif.Multitool /usr/local/bin/sarif
-COPY --from=build /build/bin/amaroq.py /usr/local/bin/amaroq.py
+
+# install amaroq pip package
+ARG AMAROQ_PATH=/opt/share/amaroq
+RUN mkdir -p ${AMAROQ_PATH}
+COPY ./src/ ${AMAROQ_PATH}/
+RUN pip3 install ${AMAROQ_PATH}
 
 ENTRYPOINT []
