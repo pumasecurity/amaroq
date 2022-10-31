@@ -21,7 +21,10 @@ if os.environ.get("AMAROQ_SARIF_COMMAND"):
 else:
     sarif = "sarif"
 
-# default verbose
+# read version from package data
+version = metadata.version('amaroq')
+
+# default verbose value
 verbose = 0
 
 # supported tool conversions
@@ -230,7 +233,7 @@ def build_args():
                         help="verbosity level (default: %(default)s)")
 
     parser.add_argument('--version', action='version',
-                        version="Amaroq {version}".format(version=metadata.version('amaroq')))
+                        version="Amaroq {version}".format(version=version))
 
     required = parser.add_argument_group('required')
     required.add_argument("-c", "--current", metavar='FILEPATH', type=str, required=True,
@@ -250,11 +253,13 @@ def build_args():
     optional.add_argument("-a", "--active-only", action="store_true",
                           help="create an additional output file with active results")
 
-    return parser.parse_args()
+    return parser
 
 
 def main():
-    args = build_args()
+    parser = build_args()
+    args = parser.parse_args()
+
     try:
         verbose = args.verbose
         loglevel = logging.INFO
