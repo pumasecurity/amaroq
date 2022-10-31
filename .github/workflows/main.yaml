@@ -26,12 +26,17 @@ jobs:
     env:
       SCAN_DIRECTORY: ${{ github.workspace }}/scan-results
       TEST_DIRECTORY: ${{ github.workspace }}/test-results
-      VERSION: ${{ github.event.inputs.version }}
     steps:
       # Install, smoke libs, and configure
       - name: Initialize
         shell: bash
         run: |
+          if [[ "${{ github.event.inputs.version }}" == "" ]]; then 
+            VERSION=${GITHUB_REF/refs\/tags\//}
+          else
+            VERSION=${{ github.event.inputs.version }}
+          fi
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
           echo "Building Amaroq ${{ env.VERSION }}"
           echo "Docker:"
           docker --version
