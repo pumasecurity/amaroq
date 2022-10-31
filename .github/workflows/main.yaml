@@ -57,31 +57,31 @@ jobs:
         run: |
           docker run pumasecurity/amaroq:${{ env.VERSION }} jq --version
           docker run pumasecurity/amaroq:${{ env.VERSION }} sarif --version
-          docker run pumasecurity/amaroq:${{ env.VERSION }} amaroq.py --help
+          docker run pumasecurity/amaroq:${{ env.VERSION }} amaroq --version
 
       # - name: Puma Scan
       #   shell: bash
       #   run: |
-      #     docker run -v ${PWD}/docs/samples/tenable:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq.py --tool PumaScan --current /scan-input/pumascan_1.sarif --output-directory /scan-output --output-filename pumascan_1.sarif
-      #     docker run -v ${PWD}/docs/samples/tenable:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq.py --tool PumaScan --previous /scan-output/pumascan_1.sarif --current /scan-input/pumascan_2.sarif --output-directory /scan-output --output-filename pumascan_2.sarif
+      #     docker run -v ${PWD}/docs/samples/tenable:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool PumaScan --current /scan-input/pumascan_1.sarif --output-directory /scan-output --output-filename pumascan_1.sarif
+      #     docker run -v ${PWD}/docs/samples/tenable:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool PumaScan --previous /scan-output/pumascan_1.sarif --current /scan-input/pumascan_2.sarif --output-directory /scan-output --output-filename pumascan_2.sarif
 
       # - name: Semgrep
       #   shell: bash
       #   run: |
-      #     docker run -v ${PWD}/docs/samples/tenable:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq.py --tool Semgrep --current /scan-input/semgrep_1.sarif --output-directory /scan-output --output-filename semgrep_1.sarif
-      #     docker run -v ${PWD}/docs/samples/tenable:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq.py --tool Semgrep --previous /scan-output/semgrep_1.sarif --current /scan-input/semgrep_2.sarif --output-directory /scan-output --output-filename semgrep_2.sarif
+      #     docker run -v ${PWD}/docs/samples/tenable:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool Semgrep --current /scan-input/semgrep_1.sarif --output-directory /scan-output --output-filename semgrep_1.sarif
+      #     docker run -v ${PWD}/docs/samples/tenable:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool Semgrep --previous /scan-output/semgrep_1.sarif --current /scan-input/semgrep_2.sarif --output-directory /scan-output --output-filename semgrep_2.sarif
 
       # - name: Trivy
       #   shell: bash
       #   run: |
-      #     docker run -v ${PWD}/docs/samples/tenable:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq.py --tool Trivy --current /scan-input/trivy_1.sarif --output-directory /scan-output --output-filename trivy_1.sarif
-      #     docker run -v ${PWD}/docs/samples/tenable:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq.py --tool Trivy --previous /scan-output/trivy_1.sarif --current /scan-input/trivy_2.sarif --output-directory /scan-output --output-filename trivy_2.sarif
+      #     docker run -v ${PWD}/docs/samples/tenable:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool Trivy --current /scan-input/trivy_1.sarif --output-directory /scan-output --output-filename trivy_1.sarif
+      #     docker run -v ${PWD}/docs/samples/tenable:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool Trivy --previous /scan-output/trivy_1.sarif --current /scan-input/trivy_2.sarif --output-directory /scan-output --output-filename trivy_2.sarif
 
       - name: Snyk OSS
         shell: bash
         run: |
-          docker run -v ${PWD}/docs/samples/snyk-oss:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq.py --tool SnykOpenSource --current /scan-input/snyk-oss_1.json --output-directory /scan-output --output-filename snyk-oss_1.sarif
-          docker run -v ${PWD}/docs/samples/snyk-oss:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq.py --tool SnykOpenSource --previous /scan-output/snyk-oss_1.sarif --current /scan-input/snyk-oss_2.json --output-directory /scan-output --output-filename snyk-oss_2.sarif
+          docker run -v ${PWD}/docs/samples/snyk-oss:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool SnykOpenSource --current /scan-input/snyk-oss_1.json --output-directory /scan-output --output-filename snyk-oss_1.sarif
+          docker run -v ${PWD}/docs/samples/snyk-oss:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool SnykOpenSource --previous /scan-output/snyk-oss_1.sarif --current /scan-input/snyk-oss_2.json --output-directory /scan-output --output-filename snyk-oss_2.sarif
 
       - name: Run Unit Tests
         run: /bin/bash ./build/bats.sh ${{ github.workspace }}/tests ${{ env.TEST_DIRECTORY }}
