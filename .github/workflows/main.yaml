@@ -37,7 +37,7 @@ jobs:
             VERSION=${{ github.event.inputs.version }}
           fi
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
-          echo "Building Amaroq ${{ env.VERSION }}"
+          echo "Building Amaroq ${VERSION}"
           echo "Docker:"
           docker --version
           echo "Scan directory: ${{ env.SCAN_DIRECTORY }}"
