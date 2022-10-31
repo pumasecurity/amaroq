@@ -31,8 +31,13 @@ jobs:
       - name: Initialize
         shell: bash
         run: |
-          echo "if [ "${{ github.event.inputs.version }}" == "" ]; then VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV; else VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV; fi
-          echo "Building Amaroq ${{ env.VERSION}}"
+          if [[ "${{ github.event.inputs.version }}" == "" ]]; then 
+            VERSION=${GITHUB_REF/refs\/tags\//}
+          else
+            VERSION=${{ github.event.inputs.version }}
+          fi
+          echo "$VERSION >> $GITHUB_ENV"
+          echo "Building Amaroq ${{ env.VERSION }}"
           echo "Docker:"
           docker --version
           echo "Scan directory: ${{ env.SCAN_DIRECTORY }}"
