@@ -27,6 +27,9 @@ version = metadata.version('amaroq')
 # default verbose value
 verbose = 0
 
+# json schemas
+summaryResultsSchema = "1.0"
+
 # supported tool conversions
 supportedTools: Iterable[str] = ["GenericSarif", "SnykOpenSource", "Nessus"]
 
@@ -45,28 +48,20 @@ def execute_cmd_not_visible(cmd):
     return out.returncode
 
 
-# def execute_cmd_visible(cmd):
-#     with subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
-#                                universal_newlines=True, stderr=subprocess.STDOUT) as proc:
-#         for line in proc.stdout:
-#             print(line, end='')
-#     if proc.returncode != 0:
-#         logging.error("Aborting: Got error while calling \"{}\"".format(cmd))
-#         exit(1)
-
 def execute_command(cmd, stdout=PIPE):
     try:
         if verbose > 0:
             logging.debug("Executing command: \"{}\"".format(cmd))
+
         process = Popen(split(cmd), stdout=stdout,
                         stderr=STDOUT, encoding='utf8')
-        # process = Popen(cmd, stdout = PIPE, stderr = STDOUT, encoding='utf8')
+
         while True:
             output = process.stdout.readline()
             if len(output) == 0 and process.poll() is not None:
                 break
             if output:
-                print(output.strip())
+                logging.info(output.strip())
         rc = process.poll()
         return rc
     except KeyboardInterrupt:
@@ -91,29 +86,30 @@ def execute_command_with_output(cmd):
 
 
 def convert_sarif_log(resultInput: str, sarifOutput: str, targetTool: str):
-    logging.info("Converting " + targetTool + " results from " +
+    logging.info("\tConverting " + targetTool + " results from " +
                  resultInput + " to " + sarifOutput + ".")
+
+    # run sarif convert command
     cmd = "{sarif} convert {resultInput} --output {sarifOutput} --tool {targetTool}".format(
         sarif=sarif, resultInput=resultInput, sarifOutput=sarifOutput, targetTool=targetTool)
+
     _rc = execute_command(cmd)
     if _rc > 0:
         raise Exception("Failure to Convert")
 
 
 def diff_sarif_log(current: str, fileOutput: str, baseline: str):
-    logging.info("Checking for differences...")
-    if verbose > 0:
-        logging.debug("Current results: " + current)
-        logging.debug("Output results: " + fileOutput)
+    logging.info("\tCurrent results: " + current)
+    logging.info("\tOutput results: " + fileOutput)
 
     # Match results, ignoring baseline if not requested. (First run of tool)
     cmd = ""
-    if baseline is None:
+    if not baseline:
         cmd = "{sarif} match-results-forward --output-file-path {fileOutput} {current}".format(
             sarif=sarif, baseline=baseline, fileOutput=fileOutput, current=current)
     else:
-        logging.info("    Baseline results: " + str(baseline))
-        cmd = "{sarif} match-results-forward --previous  {baseline} --output-file-path {fileOutput}  {current}".format(
+        logging.info("\tBaseline results: " + baseline)
+        cmd = "{sarif} match-results-forward --previous {baseline} --output-file-path {fileOutput} {current}".format(
             sarif=sarif, baseline=baseline, fileOutput=fileOutput, current=current)
     _rc = execute_command(cmd)
     if _rc > 0:
@@ -121,7 +117,7 @@ def diff_sarif_log(current: str, fileOutput: str, baseline: str):
 
 
 def summary_sarif_log(sarifResults: str, summaryResults: str,  activeResults: str):
-    logging.info("Generating summary..")
+    logging.info("\tGenerating results summary...")
 
     logging.debug("Querying new instances..")
     cmd = '{sarif} query --return-count --expression {expression} {sarifResults}'.format(
@@ -168,27 +164,26 @@ def summary_sarif_log(sarifResults: str, summaryResults: str,  activeResults: st
         sarif=sarif, sarifResults=sarifResults, expression='"IsSuppressed == false && BaselineState != \'Absent\' && Rank > 0 && Rank < 4.0"')
     low_results = execute_cmd_not_visible(cmd)
 
-    results = """
-    Summary:
-        New Results:        {new_results}
-        Absent Results:     {absent_results}
-        Unchanged Results:  {unchanged_results}
-        Suppressed Results: {suppressed_results}
+    results = """\tSummary:
+\tNew Results:\t\t{new_results}
+\tAbsent Results:\t\t{absent_results}
+\tUnchanged Results:\t{unchanged_results}
+\tSuppressed Results:\t{suppressed_results}
 
-        Critical Results:   {critical_results}
-        High Results:       {high_results}
-        Medium Results:     {medium_results}
-        Low Results:        {low_results}
+\tCritical Results:\t{critical_results}
+\tHigh Results:\t\t{high_results}
+\tMedium Results:\t\t{medium_results}
+\tLow Results:\t\t{low_results}
     """.format(new_results=new_results, absent_results=absent_results, unchanged_results=unchanged_results,
                suppressed_results=suppressed_results, critical_results=critical_results, high_results=high_results, medium_results=medium_results, low_results=low_results)
-    logger.info(results)
+    logging.info(results)
 
     # write summary data to disk
     if summaryResults:
         logging.info(
-            " Writing summary results to: \"{}\"".format(summaryResults))
+            "\tWriting summary results to: \"{}\"".format(summaryResults))
         summary = {
-            "version": "1.0.0",
+            "version": summaryResultsSchema,
             "summary": {
                 "new": new_results,
                 "absent": absent_results,
@@ -206,7 +201,8 @@ def summary_sarif_log(sarifResults: str, summaryResults: str,  activeResults: st
 
     # Write trimmed results file (for display in CI / CD)
     if activeResults:
-        logging.info("Writing active results to: \"{}\"".format(activeResults))
+        logging.info("Writing active results to: \"{}\"".format(
+            activeResults))
         cmd = '{sarif} query --expression {expression} --output {activeResults} {sarifResults}'.format(
             sarif=sarif, sarifResults=sarifResults, expression='"IsSuppressed == false && BaselineState != \'Absent\'"', activeResults=activeResults)
         rc = execute_cmd_not_visible(cmd)
@@ -214,7 +210,7 @@ def summary_sarif_log(sarifResults: str, summaryResults: str,  activeResults: st
 
 
 def print_art():
-    print("""
+    logging.info("""
     ___
    /   |  ____ ___  ____ __________  ____ _
   / /| | / __ `__ \/ __ `/ ___/ __ \/ __ `/
@@ -222,32 +218,44 @@ def print_art():
 /_/  |_/_/ /_/ /_/\__,_/_/   \____/\__, /
                                      /_/
     """)
+    print_version()
+
+
+def print_version():
+    try:
+        logging.info("Version {version}".format(version=version))
+        result = execute_command(
+            "{sarif} --version".format(sarif=sarif))
+        logging.info("")
+
+        if result != 0:
+            raise Exception("Sarif SDK version check failed")
+    except FileNotFoundError as f:
+        raise Exception("Sarif SDK was not found")
 
 
 def build_args():
-    parser = argparse.ArgumentParser(prog='amaroq',
-                                     formatter_class=argparse.RawDescriptionHelpFormatter,
-                                     description=print_art())
+    parser = argparse.ArgumentParser(prog='amaroq')
 
     parser.add_argument("-v", "--verbose", action='count', default=0,
                         help="verbosity level (default: %(default)s)")
 
-    parser.add_argument('--version', action='version',
-                        version="Amaroq {version}".format(version=version))
+    parser.add_argument("--version", action="store_true",
+                        help="Show amaroq version number and exit")
 
     required = parser.add_argument_group('required')
-    required.add_argument("-c", "--current", metavar='FILEPATH', type=str, required=True,
-                          help="specify a current file path")
-    required.add_argument("-o", "--output-filename", metavar='FILENAME', type=str, required=True,
-                          help="file output name")
-    required.add_argument("-d", "--output-directory", metavar='DIR', type=str, required=True,
-                          help="output directory path")
+    required.add_argument("-c", "--current", metavar='FILEPATH', type=str,
+                          help="specify the full path to the current results file")
+    required.add_argument("-d", "--output-directory", metavar='DIR', type=str,
+                          help="specify the directory for the SARIF output file")
+    required.add_argument("-o", "--output-filename", metavar='FILENAME', type=str,
+                          help="specify the name for the SARIF output file")
     required.add_argument("-t", "--tool", nargs=1, metavar='TOOL', type=str, choices=supportedTools, default="GenericSarif",
                           help="Tool format: {tools} (default: %(default)s)".format(tools='|'.join(supportedTools).strip('|')))
 
     optional = parser.add_argument_group('optional')
-    optional.add_argument("-p", "--previous", nargs=1, metavar='FILEPATH',
-                          help="path a previous SARIF baseline file path")
+    optional.add_argument("-p", "--previous", metavar='FILEPATH', type=str,
+                          help="path to a previous SARIF baseline file path")
     optional.add_argument("-f", "--force", action="store_true",
                           help="force overwrite output files")
     optional.add_argument("-a", "--active-only", action="store_true",
@@ -260,30 +268,47 @@ def main():
     parser = build_args()
     args = parser.parse_args()
 
+    # configure logging
+    verbose = args.verbose
+    loglevel = logging.INFO
+    if verbose > 0:
+        loglevel = logging.DEBUG
+
+    # default log file location to bin directory
+    logFileName = "amaroq_{timestamp}.log".format(
+        timestamp=datetime.datetime.now().strftime("%y%m%d%H%M%S"))
+
+    # override to output dir if exists
+    if os.path.isdir(args.output_directory):
+        logFileName = os.path.join(os.path.abspath(
+            args.output_directory), logFileName)
+
+    logging.basicConfig(
+        level=loglevel,
+        format="%(message)s",
+        handlers=[
+            logging.FileHandler(logFileName),
+            logging.StreamHandler()
+        ]
+    )
+
     try:
-        verbose = args.verbose
-        loglevel = logging.INFO
-        if verbose > 0:
-            loglevel = logging.DEBUG
+        if args.version:
+            print_art()
+            exit(0)
 
-        # default log file location to bin directory
-        logFileName = "amaroq_{timestamp}.log".format(
-            timestamp=datetime.datetime.now().strftime("%y%m%d%H%M%S"))
-        # override to output dir if exists
-        if os.path.isdir(args.output_directory):
-            logFileName = os.path.join(os.path.abspath(
-                args.output_directory), logFileName)
+        # Validate args
+        InvalidArgs = False
 
-        logging.basicConfig(
-            level=loglevel,
-            format="%(asctime)s [%(levelname)s] %(message)s",
-            handlers=[
-                logging.FileHandler(logFileName),
-                logging.StreamHandler()
-            ]
-        )
+        # check required fields
+        if not args.current:
+            logging.info("Argument error: Current results file is required.")
 
-        logging.debug("Arguments: \"{}\"".format(args))
+        if not args.output_directory:
+            logging.info("Argument error: Output directory is required.")
+
+        if not args.output_filename:
+            logging.info("Argument error: Output file name is required.")
 
         # check output directory
         if not os.path.isdir(args.output_directory):
@@ -292,7 +317,6 @@ def main():
 
         # output directory
         outputDirectory = os.path.abspath(args.output_directory)
-        logging.debug(outputDirectory)
 
         # output file name
         outputFilePath = os.path.join(outputDirectory, args.output_filename)
@@ -305,14 +329,12 @@ def main():
         activeFileName = os.path.join(
             outputDirectory, "active_" + args.output_filename)
 
-        # Print help for required parameters
-        InvalidArgs = False
-
         # check output file
         if os.path.isfile(outputFilePath):
             if args.force:
                 if verbose > 0:
-                    logging.debug("Removing: \"{}\"".format(outputFilePath))
+                    logging.info("Removing: \"{}\"".format(
+                        outputFilePath))
                 os.remove(outputFilePath)
             else:
                 logging.info("Argument error: Output file already exits.")
@@ -322,7 +344,8 @@ def main():
         if os.path.isfile(summaryFilePath):
             if args.force:
                 if verbose > 0:
-                    logging.debug("Removing: \"{}\"".format(summaryFilePath))
+                    logging.info("Removing: \"{}\"".format(
+                        summaryFilePath))
                 os.remove(summaryFilePath)
             else:
                 logging.info(
@@ -333,7 +356,8 @@ def main():
         if args.active_only and os.path.isfile(activeFileName):
             if args.force:
                 if verbose > 0:
-                    logging.debug("Removing: \"{}\"".format(activeFileName))
+                    logging.info("Removing: \"{}\"".format(
+                        activeFileName))
                 os.remove(activeFileName)
             else:
                 logging.info("Argument error: Active only file already exits.")
@@ -344,22 +368,22 @@ def main():
             logging.info("Argument error: Current results file was not found.")
             InvalidArgs = True
 
+        # check previous results file
+        if args.previous and not os.path.isfile(str(args.previous)):
+            logging.info(
+                "Argument error: Previous results file was not found.")
+            InvalidArgs = True
+
         # Check if args are valid
         if (InvalidArgs == True):
-            print("")
+            logging.info("")
             parser.print_help()
             exit(-1)
 
-        # Smoke test sarif binary
-        try:
-            print("Version {version}".format(version=version))
-            result = execute_command(
-                "{sarif} --version".format(sarif=sarif))
+        # args are good, print banner + version and move forward
+        print_art()
 
-            if result != 0:
-                raise Exception("Sarif SDK version check failed")
-        except FileNotFoundError as f:
-            raise Exception("Sarif SDK was not found")
+        logging.debug("Arguments: \"{}\"".format(args))
 
         # Convert sarif log file
         try:
@@ -372,14 +396,18 @@ def main():
             logging.debug(
                 "Creating temp conversion file {}".format(normalizedFileOutput))
 
+            logging.info("Phase 1: Performing Data Transformation")
             convert_sarif_log(resultInput=args.current,
                               sarifOutput=normalizedFileOutput, targetTool=args.tool[0])
 
+            logging.info("Phase 2: Performing Differential Analysis")
             diff_sarif_log(baseline=args.previous,
                            current=normalizedFileOutput, fileOutput=outputFilePath)
 
+            logging.info("Phase 3: Analyzing Vulnerability Results")
             summary_sarif_log(activeResults=args.active_only,
                               sarifResults=outputFilePath, summaryResults=summaryFilePath)
+
         except Exception as e:
             raise e
         finally:
