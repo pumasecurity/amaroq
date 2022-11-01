@@ -190,6 +190,7 @@ def summary_sarif_log(sarifResults: str, summaryResults: str,  activeResults: st
                 "absent": absent_results,
                 "unchanged": unchanged_results,
                 "updated": updated_results,
+                "suppressed": suppressed_results,
                 "critical": critical_results,
                 "high": high_results,
                 "medium": medium_results,
