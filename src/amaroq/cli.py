@@ -13,7 +13,6 @@ from re import A
 from shlex import split
 from subprocess import DEVNULL, PIPE, STDOUT, Popen
 from tabnanny import check
-from turtle import update
 from typing import Iterable
 
 # debug mode: set AMAROQ_SARIF_COMMAND (e.g. `dotnet /source/sarif-sdk/bld/bin/AnyCPU_Debug/Sarif.Multitool/netcoreapp3.1/Sarif.Multitool.dll`)
