@@ -12,7 +12,7 @@ Puma Security's Amaroq is licensed under the Mozilla Public License (MPL) versio
 
 ## Contributing
 
-Contributions are welcome. Fork and send us a pull request!
+Contributions are welcome. Fork the [Amaroq repository](https://github.com/pumasecurity/amaroq) send us a pull request!
 
 ## Contributors
 
