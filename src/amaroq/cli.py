@@ -279,7 +279,7 @@ def main():
         timestamp=datetime.datetime.now().strftime("%y%m%d%H%M%S"))
 
     # override to output dir if exists
-    if os.path.isdir(args.output_directory):
+    if args.output_directory and os.path.isdir(args.output_directory):
         logFileName = os.path.join(os.path.abspath(
             args.output_directory), logFileName)
 
