@@ -10,12 +10,7 @@ load '../node_modules/bats-file/load'
 
 @test "snykoss-1-new" {
     results=$(jq -r '.summary.new' $SCAN_DIRECTORY/summary_snyk-oss_1.json)
-    assert_equal "$results" "39"
-}
-
-@test "snykoss-1-suppressed" {
-    results=$(jq -r '.summary.suppressed' $SCAN_DIRECTORY/summary_snyk-oss_1.json)
-    assert_equal "$results" "2"
+    assert_equal "$results" "41"
 }
 
 @test "snykoss-2-results" {
