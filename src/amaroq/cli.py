@@ -13,6 +13,7 @@ from re import A
 from shlex import split
 from subprocess import DEVNULL, PIPE, STDOUT, Popen
 from tabnanny import check
+from turtle import update
 from typing import Iterable
 
 # debug mode: set AMAROQ_SARIF_COMMAND (e.g. `dotnet /source/sarif-sdk/bld/bin/AnyCPU_Debug/Sarif.Multitool/netcoreapp3.1/Sarif.Multitool.dll`)
@@ -168,13 +169,14 @@ def summary_sarif_log(sarifResults: str, summaryResults: str,  activeResults: st
 \tNew Results:\t\t{new_results}
 \tAbsent Results:\t\t{absent_results}
 \tUnchanged Results:\t{unchanged_results}
+\tUpdated Results:\t{updated_results}
 \tSuppressed Results:\t{suppressed_results}
 
 \tCritical Results:\t{critical_results}
 \tHigh Results:\t\t{high_results}
 \tMedium Results:\t\t{medium_results}
 \tLow Results:\t\t{low_results}
-    """.format(new_results=new_results, absent_results=absent_results, unchanged_results=unchanged_results,
+    """.format(new_results=new_results, absent_results=absent_results, unchanged_results=unchanged_results, updated_results=updated_results,
                suppressed_results=suppressed_results, critical_results=critical_results, high_results=high_results, medium_results=medium_results, low_results=low_results)
     logging.info(results)
 
