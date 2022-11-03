@@ -82,6 +82,11 @@ jobs:
       #     docker run -v ${PWD}/docs/samples/tenable:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool Trivy --current /scan-input/trivy_1.sarif --output-directory /scan-output --output-filename trivy_1.sarif
       #     docker run -v ${PWD}/docs/samples/tenable:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool Trivy --previous /scan-output/trivy_1.sarif --current /scan-input/trivy_2.sarif --output-directory /scan-output --output-filename trivy_2.sarif
 
+      - name: Nessus
+        shell: bash
+        run: |
+          docker run -v ${PWD}/docs/samples/nessus:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool Nessus --current /scan-input/10.3.1.112_1.nessus --output-directory /scan-output --output-filename 10.3.1.112_1.sarif
+
       - name: Snyk OSS
         shell: bash
         run: |
