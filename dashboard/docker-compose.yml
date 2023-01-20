@@ -1,0 +1,44 @@
+version: "3"
+
+services:
+  influxdb:
+    image: influxdb:latest
+    volumes:
+      - influxdb-storage:/var/lib/influxdb2:rw
+    env_file:
+      - .env
+    entrypoint: ["./entrypoint.sh"]
+    restart: on-failure:10
+    ports:
+      - ${DOCKER_INFLUXDB_INIT_PORT}:8086
+
+  telegraf:
+    image: telegraf:latest
+    volumes:
+      - ${TELEGRAF_CFG_PATH}:/etc/telegraf/telegraf.conf:rw
+      - ${DATA_PATH}:/data
+      - ${STARLARK_PATH}:/starlark
+      - ${COMPLETED_PATH}:/completed
+      - ${MONITOR_PATH}:/monitor
+    env_file:
+      - .env
+    depends_on:
+      - influxdb    
+
+  grafana:
+    image: grafana/grafana-oss:8.4.3
+    volumes:
+      - grafana-storage:/var/lib/grafana:rw
+      - ./grafana/provisioning/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
+      - ./grafana/provisioning/dashboards:/var/lib/grafana/dashboards
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - influxdb
+    ports:
+      - ${GRAFANA_PORT}:3000
+    env_file:
+      - .env    
+
+volumes:
+  grafana-storage:
+  influxdb-storage:
