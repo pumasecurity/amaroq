@@ -1,5 +1,5 @@
 version: "3"
-
+name: amaroq-dashboard
 services:
   influxdb:
     image: influxdb:latest
