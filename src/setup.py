@@ -18,7 +18,7 @@ setuptools.setup(
     url="https://github.com/pumasecurity/amaroq",
     packages=["amaroq"],
     include_package_data=True,
-    install_requires=[],
+    install_requires=['pyyaml','jsonschema'],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Security",

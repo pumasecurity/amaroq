@@ -7,7 +7,7 @@ The Amaroq Engine performs vulnerability analysis, suppression, and threshold en
 To run an analysis, run the container image mounting directories containing the "input" file(s) and "output" location. The following example shows how to run an Amaroq analysis for the initial analysis of a Snyk OSS scan.
 
 ```bash
-docker run -v ${PWD}/docs/samples/snyk-oss:/scan-input pumasecurity/amaroq:latest amaroq --tool SnykOpenSource --current /scan-input/snyk-oss_1.json --output-directory /scan-input --output-filename snyk-oss_1.sarif
+docker run -v ${PWD}/docs/samples/snyk-oss:/scan-input -v ${PWD}/docs/samples/settings:/settings pumasecurity/amaroq:latest amaroq --tool SnykOpenSource --current /scan-input/snyk-oss_1.json --output-directory /scan-input --output-filename snyk-oss_1.sarif --project-id "a490c17a-058c-4566-9c72-d536d13282ff" --organization-id "29a2da7d-f9dd-4810-8d9a-62a9b27c3817" --settings /settings/settings.yaml
 ```
 
 The output will confirm the Snyk OSS JSON schema was converted to a SARIF results format (if necessary) and the differential analysis was performed against the results.
@@ -38,7 +38,7 @@ Phase 3: Analyzing Vulnerability Results
 On subsequent executions, pass the previous results file into the `amaroq` script using the `--previous` argument. The results will be merged and analyzed using the differential analysis capability.
 
 ```bash
-docker run -v ${PWD}/docs/samples/snyk-oss:/scan-input pumasecurity/amaroq:latest amaroq --tool SnykOpenSource --previous /scan-input/snyk-oss_1.sarif --current /scan-input/snyk-oss_2.json --output-directory /scan-input --output-filename snyk-oss_2.sarif
+docker run -v ${PWD}/docs/samples/snyk-oss:/scan-input -v ${PWD}/docs/samples/settings:/settings pumasecurity/amaroq:latest amaroq --tool SnykOpenSource --previous /scan-input/snyk-oss_1.sarif --current /scan-input/snyk-oss_2.json --output-directory /scan-input --output-filename snyk-oss_2.sarif --project-id "a490c17a-058c-4566-9c72-d536d13282ff" --organization-id "29a2da7d-f9dd-4810-8d9a-62a9b27c3817" --settings /settings/settings.yaml
 ```
 
 ## Settings Configuration

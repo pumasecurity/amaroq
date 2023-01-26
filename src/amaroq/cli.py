@@ -7,6 +7,7 @@ import logging
 import os
 import subprocess
 import logging
+import yaml
 from asyncio.log import logger
 from importlib import metadata
 from re import A
@@ -14,6 +15,7 @@ from shlex import split
 from subprocess import DEVNULL, PIPE, STDOUT, Popen
 from tabnanny import check
 from typing import Iterable
+from .settingsValidator import validateSettings
 
 # debug mode: set AMAROQ_SARIF_COMMAND (e.g. `dotnet /source/sarif-sdk/bld/bin/AnyCPU_Debug/Sarif.Multitool/netcoreapp3.1/Sarif.Multitool.dll`)
 if os.environ.get("AMAROQ_SARIF_COMMAND"):
@@ -82,6 +84,61 @@ def execute_command_with_output(cmd):
         exit()
     except Exception as ex:
         logging.error("Encountered an error: ", ex)
+
+def apply_suppression_sarif_log(sarifResults:str, alias:str, expression: str, status: str, justification: str, expiryUtc: str, resultsGuids):
+    cmd = '{sarif} suppress "{sarifInput}" -i --timestamps --alias "{alias}" --status "{status}" --justification "{justification}"'.format(
+        sarif=sarif, sarifInput=sarifResults, alias=alias, status=status, justification=justification)    
+    if expiryUtc :
+        cmd = cmd + ' --expiryUtc "{expiryUtc}"'.format(expiryUtc=expiryUtc)
+    if resultsGuids:
+        cmd = cmd + ' --results-guids "{guids}"'.format(guids=resultsGuids)
+    if expression:
+        cmd = cmd + ' --expression "{expression}"'.format(expression=expression)
+
+    # run sarif suppress command
+    _rc = execute_command(cmd)
+    if _rc > 0:
+        raise Exception("Failure to Suppress")
+
+def suppress_sarif_log(sarifResults:str, targetTool: str, settingsFile:str):
+    settingsData = None
+    with open(settingsFile, "r") as stream:
+        try:
+            settingsData = yaml.safe_load(stream)            
+        except yaml.YAMLError as exc:
+            logging.error("Error loading settings:")
+            if hasattr(exc, 'problem_mark'):
+                mark = exc.problem_mark
+                logging.error("Error position: (%s:%s)" % (mark.line+1, mark.column+1))
+            else:
+                logging.error(exc)
+    if not settingsData:
+        logging.error("Suppressions not applied. Exiting with Error")
+        exit(1) # TODO add error code??
+    settings = settingsData['settings']
+    for toolsettings in settings:
+        tool = toolsettings.get('tool', None)
+        suppressions = toolsettings.get('suppressions', None)               
+        if tool and tool == targetTool:
+            logging.info("\tApplying {suppressionCount} suppression rule(s).".format(suppressionCount=len(suppressions)))
+            if suppressions:
+                for suppression in suppressions:
+                    expression = suppression.get('expression', "")
+                    alias = suppression.get('alias')
+                    status = suppression.get('status')
+                    justification = suppression.get('justification')
+                    expiryUtc = suppression.get('expiryUtc', None)
+                    resultsGuids = suppression.get('results-guids', [])
+
+                    if not alias and not status and not justification:
+                        logging.error("One or more required supression parameters are empty: \nAlais: {alais}\nSTATUS: {status}\nJUSTIFICATION: {justification}".format(alias=alias, status=status, justification=justification))    
+                        exit(1)
+
+                    #suppress only value expiry dates or if date is not given
+                    suppress = (expiryUtc and datetime.datetime.utcnow() < expiryUtc) or (not expiryUtc)
+                    if suppress:
+                        apply_suppression_sarif_log(sarifResults=sarifResults, expression=expression, alias=alias, status=status, justification=justification, resultsGuids=resultsGuids, expiryUtc=expiryUtc)                
+
 
 def apply_amaroq_metadata(sarifResults: str, organizationId: str, projectId: str):
     logging.info("\tGenerating Amaroq metadata...")
@@ -345,6 +402,8 @@ def build_args():
     required = parser.add_argument_group('required')
     required.add_argument("-c", "--current", metavar='FILEPATH', type=str,
                           help="specify the full path to the current results file")
+    required.add_argument("-s", "--settings", metavar='FILEPATH', type=str,
+                          help="specify the full path to the Amaroq settings file")    
     required.add_argument("-d", "--output-directory", metavar='DIR', type=str,
                           help="specify the directory for the SARIF output file")
     required.add_argument("-o", "--output-filename", metavar='FILENAME', type=str,
@@ -430,6 +489,9 @@ def main():
             logging.info("Argument error: Output directory was not found.")
             InvalidArgs = True
 
+        if not args.settings:
+            logging.info("Argument error: Settings file is required.")
+            InvalidArgs = True
         # output directory
         outputDirectory = os.path.abspath(args.output_directory)
 
@@ -482,6 +544,11 @@ def main():
         if not os.path.isfile(str(args.current)):
             logging.info("Argument error: Current results file was not found.")
             InvalidArgs = True
+        
+        # check settings file
+        if not os.path.isfile(str(args.settings)):            
+            logging.info("Argument error: Amaroq settings file was not found.")
+            InvalidArgs = True            
 
         # check previous results file
         if args.previous and not os.path.isfile(str(args.previous)):
@@ -502,11 +569,13 @@ def main():
 
         # Convert sarif log file
         try:
+            validateSettings(settings=args.settings)
+
             tempFileName = "{basename}_{timestamp}.sarif".format(
                 basename=os.path.splitext(os.path.basename(outputFilePath))[0],
                 timestamp=datetime.datetime.now().strftime("%y%m%d%H%M%S"))
             normalizedFileOutput = os.path.join(
-                outputDirectory, tempFileName)
+                outputDirectory, tempFileName)            
 
             logging.debug(
                 "Creating temp conversion file {}".format(normalizedFileOutput))
@@ -519,11 +588,13 @@ def main():
             diff_sarif_log(baseline=args.previous,
                            current=normalizedFileOutput, fileOutput=outputFilePath)
 
-            logging.info("Phase 3: Analyzing Vulnerability Results")
+            logging.info("Phase 3: Applying Suppression rules")
+            suppress_sarif_log(sarifResults=outputFilePath, targetTool=args.tool[0], settingsFile=args.settings)
+
+            logging.info("Phase 4: Analyzing Vulnerability Results")
             summary_sarif_log(projectId=args.project_id, organizationId=args.organization_id, targetTool=args.tool[0], activeResults=args.active_only,
-                              sarifResults=outputFilePath, summaryResults=summaryFilePath, runtimestamp=currentTimestamp)
-            
-            logging.info("Phase 4: Applying Amaroq metadata")
+                              sarifResults=outputFilePath, summaryResults=summaryFilePath, runtimestamp=currentTimestamp)                        
+            logging.info("Phase 5: Generating Amaroq metadata")
             apply_amaroq_metadata(sarifResults=outputFilePath, projectId=args.project_id, organizationId=args.organization_id)
 
         except Exception as e:

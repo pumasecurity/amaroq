@@ -1,0 +1,47 @@
+version: 1.0.0
+settings:
+  - tool: SnykCode
+    version: 1.0.0
+    suppressions:
+      - alias: eric.johnson
+        status: Accepted
+        justification: False positive
+        expiryUtc: 2023-10-30T00:00:00
+        results-guids:
+          - 90198fc8-83f5-45a0-bc20-b6e23cbe0ffc
+          - guid2
+      - expression: BaselineState == 'New'
+        alias: andrew.guggenberger
+        status: Accepted
+        justification: New Baseline results
+        expiryUtc: 2022-10-30T00:00:00
+      - alias: eric.mead
+        status: Accepted
+        justification: Known guid
+        expiryUtc: 2022-10-30T00:00:00
+        results-guids:
+          - 5fab698b-35f9-485e-ad8b-2aa4664c19b5
+    thresholds:
+      - "RuleId = 'csharp/InsecureCipher' AND OccurrenceCount < 3 "
+  - tool: SnykOpenSource
+    version: 1.0.0
+    suppressions:
+      - alias: eric.johnson
+        status: Accepted
+        justification: False positive
+        expiryUtc: 2023-10-30T00:00:00
+        results-guids:
+          - 7e1ff826-2cf2-4d0a-9338-489efe666bd8
+      - alias: eric.mead
+        status: Accepted
+        justification: Know guid and Absent
+        expiryUtc: 2023-10-30T00:00:00
+        results-guids:
+          - d6be93ee-46b8-4815-9bde-852db53e97c5
+      - expression: BaselineState == 'Unchanged'
+        alias: eric.mead
+        status: Accepted
+        justification: Know guid and Unchanged
+        expiryUtc: 2023-10-30T00:00:00        
+    thresholds:
+      - "RuleId = 'csharp/InsecureCipher' AND OccurrenceCount < 3 "      
