@@ -430,8 +430,8 @@ def main():
     parser = build_args()
     args = parser.parse_args()
     #current timestamp for logs and run properties
-    #currentTimestamp = datetime.datetime.now().strftime("%y%m%d%H%M%S.%F")
-    currentTimestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    currenttime = datetime.datetime.now()
+    currentTimestamp = currenttime.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
     # configure logging
     verbose = args.verbose
@@ -440,7 +440,7 @@ def main():
         loglevel = logging.DEBUG
 
     # default log file location to bin directory
-    logFileName = "amaroq_{timestamp}.log".format(timestamp=currentTimestamp)
+    logFileName = "amaroq_{timestamp}.log".format(timestamp=currenttime.strftime("%y%m%d%H%M%S.%F"))
 
     # override to output dir if exists
     if args.output_directory and os.path.isdir(args.output_directory):
