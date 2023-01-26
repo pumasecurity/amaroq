@@ -8,6 +8,7 @@ import os
 import subprocess
 import logging
 import yaml
+import jsonschema
 from asyncio.log import logger
 from importlib import metadata
 from re import A
@@ -568,14 +569,14 @@ def main():
         logging.debug("Arguments: \"{}\"".format(args))
 
         # Convert sarif log file
-        try:
-            validateSettings(settings=args.settings)
-
+        try:            
             tempFileName = "{basename}_{timestamp}.sarif".format(
                 basename=os.path.splitext(os.path.basename(outputFilePath))[0],
                 timestamp=datetime.datetime.now().strftime("%y%m%d%H%M%S"))
             normalizedFileOutput = os.path.join(
                 outputDirectory, tempFileName)            
+
+            validateSettings(settings=args.settings)
 
             logging.debug(
                 "Creating temp conversion file {}".format(normalizedFileOutput))

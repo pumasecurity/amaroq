@@ -98,7 +98,8 @@ def datetimeConverter(o):
     return o.__str__()
 
 def validateSettings(settings:str):
-    settingsData = None
+  try:
+    settingsData = None    
     with open(settings, "r") as stream:
         try:
             settingsData = yaml.safe_load(stream)            
@@ -117,4 +118,8 @@ def validateSettings(settings:str):
         instance=settingsJsonObject,
         schema=amaroq_settings_schema)
     logging.info("Settings Validation: Passed")
+  except jsonschema.ValidationError as error:
+      logging.error("Settings Validation: Failed!")
+      raise error
+    
       
