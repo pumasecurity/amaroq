@@ -7,6 +7,8 @@ import logging
 import os
 import subprocess
 import logging
+import yaml
+import jsonschema
 from asyncio.log import logger
 from importlib import metadata
 from re import A
@@ -14,6 +16,7 @@ from shlex import split
 from subprocess import DEVNULL, PIPE, STDOUT, Popen
 from tabnanny import check
 from typing import Iterable
+from .settingsValidator import validateSettings
 
 # debug mode: set AMAROQ_SARIF_COMMAND (e.g. `dotnet /source/sarif-sdk/bld/bin/AnyCPU_Debug/Sarif.Multitool/netcoreapp3.1/Sarif.Multitool.dll`)
 if os.environ.get("AMAROQ_SARIF_COMMAND"):
@@ -32,8 +35,7 @@ summaryResultsSchema = "1.0"
 
 # supported tool conversions
 supportedTools: Iterable[str] = ["GenericSarif", "SnykOpenSource", "Nessus"]
-
-
+       
 def execute_cmd_not_visible(cmd):
     try:
         if verbose > 0:
@@ -84,6 +86,155 @@ def execute_command_with_output(cmd):
     except Exception as ex:
         logging.error("Encountered an error: ", ex)
 
+def apply_suppression_sarif_log(sarifResults:str, alias:str, expression: str, status: str, justification: str, expiryUtc: str, resultsGuids):
+    cmd = '{sarif} suppress "{sarifInput}" -i --timestamps --alias "{alias}" --status "{status}" --justification "{justification}"'.format(
+        sarif=sarif, sarifInput=sarifResults, alias=alias, status=status, justification=justification)    
+    if expiryUtc :
+        cmd = cmd + ' --expiryUtc "{expiryUtc}"'.format(expiryUtc=expiryUtc)
+    if resultsGuids:
+        cmd = cmd + ' --results-guids "{guids}"'.format(guids=resultsGuids)
+    if expression:
+        cmd = cmd + ' --expression "{expression}"'.format(expression=expression)
+
+    # run sarif suppress command
+    _rc = execute_command(cmd)
+    if _rc > 0:
+        raise Exception("Failure to Suppress")
+
+def suppress_sarif_log(sarifResults:str, targetTool: str, settingsFile:str):
+    settingsData = None
+    with open(settingsFile, "r") as stream:
+        try:
+            settingsData = yaml.safe_load(stream)            
+        except yaml.YAMLError as exc:
+            logging.error("Error loading settings:")
+            if hasattr(exc, 'problem_mark'):
+                mark = exc.problem_mark
+                logging.error("Error position: (%s:%s)" % (mark.line+1, mark.column+1))
+            else:
+                logging.error(exc)
+    if not settingsData:
+        logging.error("Suppressions not applied. Exiting with Error")
+        exit(1) # TODO add error code??
+    settings = settingsData['settings']
+    for toolsettings in settings:
+        tool = toolsettings.get('tool', None)
+        suppressions = toolsettings.get('suppressions', None)               
+        if tool and tool == targetTool:
+            logging.info("\tApplying {suppressionCount} suppression rule(s).".format(suppressionCount=len(suppressions)))
+            if suppressions:
+                for suppression in suppressions:
+                    expression = suppression.get('expression', "")
+                    alias = suppression.get('alias')
+                    status = suppression.get('status')
+                    justification = suppression.get('justification')
+                    expiryUtc = suppression.get('expiryUtc', None)
+                    resultsGuids = suppression.get('results-guids', [])
+
+                    if not alias and not status and not justification:
+                        logging.error("One or more required supression parameters are empty: \nAlais: {alais}\nSTATUS: {status}\nJUSTIFICATION: {justification}".format(alias=alias, status=status, justification=justification))    
+                        exit(1)
+
+                    #suppress only value expiry dates or if date is not given
+                    suppress = (expiryUtc and datetime.datetime.utcnow() < expiryUtc) or (not expiryUtc)
+                    if suppress:
+                        apply_suppression_sarif_log(sarifResults=sarifResults, expression=expression, alias=alias, status=status, justification=justification, resultsGuids=resultsGuids, expiryUtc=expiryUtc)                
+
+
+def apply_amaroq_metadata(sarifResults: str, organizationId: str, projectId: str):
+    logging.info("\tGenerating Amaroq metadata...")
+    # read sarif log
+    with open(sarifResults) as f:
+        sarifResultsData = json.load(f)
+
+    runs = sarifResultsData['runs']
+    for run in runs:        
+
+        runtimestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        tool = run['tool']['driver']['name']
+        unchanged = 0
+        new = 0
+        updated = 0
+        absent = 0        
+        suppressed = 0
+
+        critical = 0
+        high = 0
+        medium = 0
+        low = 0
+        for result in run["results"]:            
+            #TODO suppressed logic
+            # // If the status of any of the suppressions is "underReview" or "rejected",
+            # // then the result should not be considered suppressed. Otherwise, the result should be considered suppressed.
+            # // https://github.com/microsoft/sarif-tutorials/blob/main/docs/Displaying-results-in-a-viewer.md#determining-suppression-status           
+            # isSuppressed = !suppressions.Any(s => s.Status == SuppressionStatus.UnderReview || s.Status == SuppressionStatus.Rejected);
+
+            # // if we have suppressions, check expiration
+            # if (isSuppressed && checkExpired)
+            # {
+            #     isSuppressed = suppressions.Any(s => (!s.TryGetProperty("expiryUtc", out DateTime noExpiryUtc) || (s.TryGetProperty("expiryUtc", out DateTime expiryUtc) && expiryUtc > DateTime.UtcNow)) && s.Status == SuppressionStatus.Accepted);
+            # }
+
+            suppressedValue = False
+            baselineState = result["baselineState"]
+                
+            if suppressedValue and baselineState != "Absent":
+                suppressed+=1
+            
+            if not suppressedValue:                
+                if baselineState == "unchanged":
+                    unchanged+=1                         
+                if baselineState == "new":
+                    new+=1
+                if baselineState == "updated":
+                    updated+=1
+                if baselineState == "absent":
+                    absent+=1                
+                
+                #TODO vuln level logic            
+                rank = result.get('rank')
+                if rank:
+                    if baselineState != "absent":
+                        if rank >= 9.0:
+                            critical+=1
+                        if rank >= 7.0 and rank < 9.0:
+                            high+=1
+                        if rank >= 4.0 and rank < 7.0:
+                            medium+=1
+                        if rank > 0 and rank < 4.0:
+                            low+=1
+
+        amaroq = {
+            "timestamp": runtimestamp,
+            "version": summaryResultsSchema,
+            "summary": {
+                "new": new,
+                "absent": absent,
+                "unchanged": unchanged,
+                "updated": updated,
+                "suppressed": suppressed,
+                "critical": critical,
+                "high": high,
+                "medium": medium,
+                "low": low                
+            },
+            "organizationId": organizationId.upper(),
+            "projectId": projectId.upper(),     
+            "id": "amaroq-{tool}-{timestamp}".format(tool=tool, timestamp=runtimestamp)     
+        }
+
+        properties = run.get('properties', None)
+        if properties:
+            run['properties']['amaroq'] = amaroq                    
+        else:
+           run['properties'] = {
+                "amaroq": amaroq
+            }
+
+    logging.info("\tUpdating sarif log with amaroq metadata to file...")
+    # update sarif log with new metadata
+    with open(sarifResults, "w") as write_file:
+            json.dump(sarifResultsData, write_file)
 
 def convert_sarif_log(resultInput: str, sarifOutput: str, targetTool: str):
     logging.info("\tConverting " + targetTool + " results from " +
@@ -116,7 +267,7 @@ def diff_sarif_log(current: str, fileOutput: str, baseline: str):
         raise Exception("Failed", "match-results-forward")
 
 
-def summary_sarif_log(sarifResults: str, summaryResults: str,  activeResults: str):
+def summary_sarif_log(organizationId: str, projectId:str, targetTool: str, sarifResults: str, summaryResults: str,  activeResults: str, runtimestamp: str):
     logging.info("\tGenerating results summary...")
 
     logging.debug("Querying new instances..")
@@ -134,7 +285,7 @@ def summary_sarif_log(sarifResults: str, summaryResults: str,  activeResults: st
         sarif=sarif, sarifResults=sarifResults, expression='"IsSuppressed == false && BaselineState == \'Unchanged\'"')
     unchanged_results = execute_cmd_not_visible(cmd)
 
-    logging.debug("Querying new instances..")
+    logging.debug("Querying updated instances..")
     cmd = '{sarif} query --return-count --expression {expression} {sarifResults}'.format(
         sarif=sarif, sarifResults=sarifResults, expression='"IsSuppressed == false && BaselineState == \'Updated\'"')
     updated_results = execute_cmd_not_visible(cmd)
@@ -184,6 +335,7 @@ def summary_sarif_log(sarifResults: str, summaryResults: str,  activeResults: st
         logging.info(
             "\tWriting summary results to: \"{}\"".format(summaryResults))
         summary = {
+            "timestamp": runtimestamp,
             "version": summaryResultsSchema,
             "summary": {
                 "new": new_results,
@@ -195,7 +347,10 @@ def summary_sarif_log(sarifResults: str, summaryResults: str,  activeResults: st
                 "high": high_results,
                 "medium": medium_results,
                 "low": low_results
-            }
+            },
+          "organizationId": organizationId,
+          "projectId": projectId,     
+          "id": "amaroq-{tool}-{timestamp}".format(tool=targetTool, timestamp=runtimestamp)     
         }
 
         with open(summaryResults, "w") as write_file:
@@ -248,6 +403,8 @@ def build_args():
     required = parser.add_argument_group('required')
     required.add_argument("-c", "--current", metavar='FILEPATH', type=str,
                           help="specify the full path to the current results file")
+    required.add_argument("-s", "--settings", metavar='FILEPATH', type=str,
+                          help="specify the full path to the Amaroq settings file")    
     required.add_argument("-d", "--output-directory", metavar='DIR', type=str,
                           help="specify the directory for the SARIF output file")
     required.add_argument("-o", "--output-filename", metavar='FILENAME', type=str,
@@ -262,13 +419,19 @@ def build_args():
                           help="force overwrite output files")
     optional.add_argument("-a", "--active-only", action="store_true",
                           help="create an additional output file with active results")
+    optional.add_argument("--organization-id", type=str, metavar='GUID',
+                          help="The Organization Id associated results with.")                          
+    optional.add_argument("--project-id", type=str, metavar='GUID',
+                          help="The Project Id associated results with.")                          
 
     return parser
-
 
 def main():
     parser = build_args()
     args = parser.parse_args()
+    #current timestamp for logs and run properties
+    #currentTimestamp = datetime.datetime.now().strftime("%y%m%d%H%M%S.%F")
+    currentTimestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
     # configure logging
     verbose = args.verbose
@@ -277,8 +440,7 @@ def main():
         loglevel = logging.DEBUG
 
     # default log file location to bin directory
-    logFileName = "amaroq_{timestamp}.log".format(
-        timestamp=datetime.datetime.now().strftime("%y%m%d%H%M%S"))
+    logFileName = "amaroq_{timestamp}.log".format(timestamp=currentTimestamp)
 
     # override to output dir if exists
     if args.output_directory and os.path.isdir(args.output_directory):
@@ -305,18 +467,32 @@ def main():
         # check required fields
         if not args.current:
             logging.info("Argument error: Current results file is required.")
+            InvalidArgs = True
 
         if not args.output_directory:
             logging.info("Argument error: Output directory is required.")
+            InvalidArgs = True
 
         if not args.output_filename:
             logging.info("Argument error: Output file name is required.")
+            InvalidArgs = True
+
+        if not args.organization_id:
+            logging.info("Argument error: Current Organization Id is required.")
+            InvalidArgs = True
+
+        if not args.project_id:
+            logging.info("Argument error: Current Project Id is required.")
+            InvalidArgs = True
 
         # check output directory
         if not os.path.isdir(args.output_directory):
             logging.info("Argument error: Output directory was not found.")
             InvalidArgs = True
 
+        if not args.settings:
+            logging.info("Argument error: Settings file is required.")
+            InvalidArgs = True
         # output directory
         outputDirectory = os.path.abspath(args.output_directory)
 
@@ -369,6 +545,11 @@ def main():
         if not os.path.isfile(str(args.current)):
             logging.info("Argument error: Current results file was not found.")
             InvalidArgs = True
+        
+        # check settings file
+        if not os.path.isfile(str(args.settings)):            
+            logging.info("Argument error: Amaroq settings file was not found.")
+            InvalidArgs = True            
 
         # check previous results file
         if args.previous and not os.path.isfile(str(args.previous)):
@@ -388,12 +569,14 @@ def main():
         logging.debug("Arguments: \"{}\"".format(args))
 
         # Convert sarif log file
-        try:
+        try:            
             tempFileName = "{basename}_{timestamp}.sarif".format(
                 basename=os.path.splitext(os.path.basename(outputFilePath))[0],
                 timestamp=datetime.datetime.now().strftime("%y%m%d%H%M%S"))
             normalizedFileOutput = os.path.join(
-                outputDirectory, tempFileName)
+                outputDirectory, tempFileName)            
+
+            validateSettings(settings=args.settings)
 
             logging.debug(
                 "Creating temp conversion file {}".format(normalizedFileOutput))
@@ -406,9 +589,14 @@ def main():
             diff_sarif_log(baseline=args.previous,
                            current=normalizedFileOutput, fileOutput=outputFilePath)
 
-            logging.info("Phase 3: Analyzing Vulnerability Results")
-            summary_sarif_log(activeResults=args.active_only,
-                              sarifResults=outputFilePath, summaryResults=summaryFilePath)
+            logging.info("Phase 3: Applying Suppression rules")
+            suppress_sarif_log(sarifResults=outputFilePath, targetTool=args.tool[0], settingsFile=args.settings)
+
+            logging.info("Phase 4: Analyzing Vulnerability Results")
+            summary_sarif_log(projectId=args.project_id, organizationId=args.organization_id, targetTool=args.tool[0], activeResults=args.active_only,
+                              sarifResults=outputFilePath, summaryResults=summaryFilePath, runtimestamp=currentTimestamp)                        
+            logging.info("Phase 5: Generating Amaroq metadata")
+            apply_amaroq_metadata(sarifResults=outputFilePath, projectId=args.project_id, organizationId=args.organization_id)
 
         except Exception as e:
             raise e

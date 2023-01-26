@@ -22,7 +22,7 @@ ENV AMAROQ_VERSION=${VERSION}
 # install packages
 RUN apk add --no-cache \
     jq=1.6-r1 bash=5.1.16-r2 coreutils=9.1-r0 \
-    python3=3.10.5-r0 py3-pip=22.1.1-r0
+    py3-pip=22.1.1-r0
 
 # set shared bundle extract directory
 ARG DOTNET_BUNDLE_EXTRACT_BASE_DIR=/var/tmp/

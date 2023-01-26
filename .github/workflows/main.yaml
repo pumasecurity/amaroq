@@ -85,13 +85,13 @@ jobs:
       - name: Nessus
         shell: bash
         run: |
-          docker run -v ${PWD}/docs/samples/nessus:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool Nessus --current /scan-input/10.3.1.112_1.nessus --output-directory /scan-output --output-filename 10.3.1.112_1.sarif
+          docker run -v ${PWD}/docs/samples/nessus:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool Nessus --current /scan-input/10.3.1.112_1.nessus --output-directory /scan-output --output-filename 10.3.1.112_1.sarif --organization-id "${{ github.owner }}" --project-id "${{ github.repository }}"
 
       - name: Snyk OSS
         shell: bash
         run: |
-          docker run -v ${PWD}/docs/samples/snyk-oss:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool SnykOpenSource --current /scan-input/snyk-oss_1.json --output-directory /scan-output --output-filename snyk-oss_1.sarif
-          docker run -v ${PWD}/docs/samples/snyk-oss:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool SnykOpenSource --previous /scan-output/snyk-oss_1.sarif --current /scan-input/snyk-oss_2.json --output-directory /scan-output --output-filename snyk-oss_2.sarif
+          docker run -v ${PWD}/docs/samples/snyk-oss:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool SnykOpenSource --current /scan-input/snyk-oss_1.json --output-directory /scan-output --output-filename snyk-oss_1.sarif --organization-id "${{ github.owner }}" --project-id "${{ github.repository }}"
+          docker run -v ${PWD}/docs/samples/snyk-oss:/scan-input -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool SnykOpenSource --previous /scan-output/snyk-oss_1.sarif --current /scan-input/snyk-oss_2.json --output-directory /scan-output --output-filename snyk-oss_2.sarif --organization-id "${{ github.owner }}" --project-id "${{ github.repository }}"
 
       - name: Run Unit Tests
         run: /bin/bash ./build/bats.sh ${{ github.workspace }}/tests ${{ env.TEST_DIRECTORY }}
