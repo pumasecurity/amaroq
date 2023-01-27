@@ -1,0 +1,65 @@
+name: Amaroq Deployment
+
+on:
+  release:
+    types: [created]
+    branches:
+      - main
+    paths-ignore:
+      - ".github/**"
+
+env:
+  AWS_DEFAULT_REGION: us-east-1
+
+permissions:
+  id-token: write # write jwt token
+  actions: read # read gh actions
+  contents: read # read access to the repo
+  checks: write # unit test results
+
+jobs:
+  release:
+    name: Amaroq Release
+    runs-on: ubuntu-latest
+    env:
+      SCAN_DIRECTORY: ${{ github.workspace }}/scan-results
+      TEST_DIRECTORY: ${{ github.workspace }}/test-results
+    steps:
+      - name: Set version
+        run: |
+          echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+      - name: Initialize
+        shell: bash
+        run: |
+          echo "Releasing Amaroq ${VERSION}"
+          echo "Docker:"
+          docker --version
+          echo "Scan directory: ${{ env.SCAN_DIRECTORY }}"
+          mkdir -p ${{ env.SCAN_DIRECTORY }}
+          echo "Test directory: ${{ env.TEST_DIRECTORY }}"
+          mkdir -p ${{ env.TEST_DIRECTORY }}
+
+      # Check out the repository + submodules
+      - name: Checkout
+        uses: actions/checkout@v2.5.0
+        with:
+          submodules: recursive
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1.7.0
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOYMENT_ROLE_ARN }}
+          role-session-name: "ps-amaroq-release-runner"
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+
+      # Install cosign
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v2.8.1
+
+      # Publish the image
+      - name: Publish Image
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        shell: bash
+        run: /bin/bash ./build/publish-image.sh ${{ secrets.AWS_PUBLIC_ECR_ORG_URI }} ${{ env.VERSION }}
+
