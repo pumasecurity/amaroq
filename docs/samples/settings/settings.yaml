@@ -6,14 +6,13 @@ settings:
       - alias: eric.johnson
         status: Accepted
         justification: False positive
-        expiryUtc: 2023-10-30T00:00:00
         results-guids:
-          - 90198fc8-83f5-45a0-bc20-b6e23cbe0ffc
+          - fe8ded06-8dd7-475b-abdf-91ad264c1317
           - guid2
-      - expression: BaselineState == 'New'
+      - expression: RuleId == 'csharp/InsecureCipher'
         alias: andrew.guggenberger
         status: Accepted
-        justification: New Baseline results
+        justification: Known guid and expired suppression
         expiryUtc: 2022-10-30T00:00:00
       - alias: eric.mead
         status: Accepted
@@ -21,8 +20,10 @@ settings:
         expiryUtc: 2022-10-30T00:00:00
         results-guids:
           - 5fab698b-35f9-485e-ad8b-2aa4664c19b5
-    thresholds:
-      - "RuleId = 'csharp/InsecureCipher' AND OccurrenceCount < 3 "
+      - expression: RuleId == 'csharp/InsecureCipher'
+        alias: andrew.guggenberger
+        status: Accepted
+        justification: Known guid and expired suppression
   - tool: SnykOpenSource
     version: 1.0.0
     suppressions:

@@ -80,8 +80,7 @@ amaroq_settings_schema = {
         "required": [
           "tool",
           "version",
-          "suppressions",
-          "thresholds"
+          "suppressions"
         ]
       }
     }

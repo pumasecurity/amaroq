@@ -34,7 +34,7 @@ verbose = 0
 summaryResultsSchema = "1.0"
 
 # supported tool conversions
-supportedTools: Iterable[str] = ["GenericSarif", "SnykOpenSource", "Nessus"]
+supportedTools: Iterable[str] = ["GenericSarif", "SnykOpenSource", "Nessus", "SnykCode"]
        
 def execute_cmd_not_visible(cmd):
     try:
@@ -234,10 +234,12 @@ def apply_amaroq_metadata(sarifResults: str, organizationId: str, projectId: str
 def convert_sarif_log(resultInput: str, sarifOutput: str, targetTool: str):
     logging.info("\tConverting " + targetTool + " results from " +
                  resultInput + " to " + sarifOutput + ".")
-
+    tool = targetTool
+    if tool == 'SnykCode':
+        tool = 'GenericSarif'
     # run sarif convert command
     cmd = "{sarif} convert {resultInput} --output {sarifOutput} --tool {targetTool}".format(
-        sarif=sarif, resultInput=resultInput, sarifOutput=sarifOutput, targetTool=targetTool)
+        sarif=sarif, resultInput=resultInput, sarifOutput=sarifOutput, targetTool=tool)
 
     _rc = execute_command(cmd)
     if _rc > 0:
