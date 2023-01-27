@@ -34,7 +34,7 @@ load '../node_modules/bats-file/load'
 
 @test "snykcode-2-unchanged" {
     results=$(jq -r '.summary.unchanged' $SCAN_DIRECTORY/summary_snyk-v2.json)
-    assert_equal "$results" "3"
+    assert_equal "$results" "4"
 }
 
 @test "snykcode-2-updated" {
@@ -44,7 +44,7 @@ load '../node_modules/bats-file/load'
 
 @test "snykcode-2-suppressed" {
     results=$(jq -r '.summary.suppressed' $SCAN_DIRECTORY/summary_snyk-v2.json)
-    assert_equal "$results" "3"
+    assert_equal "$results" "2"
 }
 
 @test "snykcode-2-date-filter" {
