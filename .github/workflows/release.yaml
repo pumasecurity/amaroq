@@ -18,8 +18,8 @@ permissions:
   checks: write # unit test results
 
 jobs:
-  build:
-    name: Amaroq Build
+  release:
+    name: Amaroq Release
     runs-on: ubuntu-latest
     env:
       SCAN_DIRECTORY: ${{ github.workspace }}/scan-results
@@ -31,7 +31,7 @@ jobs:
       - name: Initialize
         shell: bash
         run: |
-          echo "Building Amaroq ${VERSION}"
+          echo "Releasing Amaroq ${VERSION}"
           echo "Docker:"
           docker --version
           echo "Scan directory: ${{ env.SCAN_DIRECTORY }}"
