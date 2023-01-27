@@ -34,12 +34,11 @@ verbose = 0
 summaryResultsSchema = "1.0"
 
 # supported tool conversions
-supportedTools: Iterable[str] = ["GenericSarif", "SnykOpenSource", "Nessus"]
+supportedTools: Iterable[str] = ["GenericSarif", "SnykOpenSource", "Nessus", "SnykCode"]
        
 def execute_cmd_not_visible(cmd):
     try:
-        if verbose > 0:
-            logging.debug("Executing command: \"{}\"".format(cmd))
+        logging.debug("Executing command: \"{}\"".format(cmd))
         out = subprocess.run(cmd, shell=True, universal_newlines=True,
                              check=False, capture_output=False, stdout=subprocess.DEVNULL)
     except subprocess.CalledProcessError as err:
@@ -52,9 +51,7 @@ def execute_cmd_not_visible(cmd):
 
 def execute_command(cmd, stdout=PIPE):
     try:
-        if verbose > 0:
-            logging.debug("Executing command: \"{}\"".format(cmd))
-
+        logging.debug("Executing command: \"{}\"".format(cmd))
         process = Popen(split(cmd), stdout=stdout,
                         stderr=STDOUT, encoding='utf8')
 
@@ -75,8 +72,7 @@ def execute_command(cmd, stdout=PIPE):
 
 def execute_command_with_output(cmd):
     try:
-        if verbose > 0:
-            logging.debug("Executing command: \"{}\"".format(cmd))
+        logging.debug("Executing command: \"{}\"".format(cmd))
         rc = subprocess.run(cmd, encoding='utf8',
                             shell=True, universal_newlines=True)
         return rc
@@ -92,10 +88,9 @@ def apply_suppression_sarif_log(sarifResults:str, alias:str, expression: str, st
     if expiryUtc :
         cmd = cmd + ' --expiryUtc "{expiryUtc}"'.format(expiryUtc=expiryUtc)
     if resultsGuids:
-        cmd = cmd + ' --results-guids "{guids}"'.format(guids=resultsGuids)
+        cmd = cmd + ' --results-guids "{guids}"'.format(guids=",".join("{0}".format(r) for r in resultsGuids))
     if expression:
         cmd = cmd + ' --expression "{expression}"'.format(expression=expression)
-
     # run sarif suppress command
     _rc = execute_command(cmd)
     if _rc > 0:
@@ -239,10 +234,12 @@ def apply_amaroq_metadata(sarifResults: str, organizationId: str, projectId: str
 def convert_sarif_log(resultInput: str, sarifOutput: str, targetTool: str):
     logging.info("\tConverting " + targetTool + " results from " +
                  resultInput + " to " + sarifOutput + ".")
-
+    tool = targetTool
+    if tool == 'SnykCode':
+        tool = 'GenericSarif'
     # run sarif convert command
     cmd = "{sarif} convert {resultInput} --output {sarifOutput} --tool {targetTool}".format(
-        sarif=sarif, resultInput=resultInput, sarifOutput=sarifOutput, targetTool=targetTool)
+        sarif=sarif, resultInput=resultInput, sarifOutput=sarifOutput, targetTool=tool)
 
     _rc = execute_command(cmd)
     if _rc > 0:
@@ -430,8 +427,8 @@ def main():
     parser = build_args()
     args = parser.parse_args()
     #current timestamp for logs and run properties
-    #currentTimestamp = datetime.datetime.now().strftime("%y%m%d%H%M%S.%F")
-    currentTimestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    currenttime = datetime.datetime.now()
+    currentTimestamp = currenttime.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
     # configure logging
     verbose = args.verbose
@@ -440,7 +437,7 @@ def main():
         loglevel = logging.DEBUG
 
     # default log file location to bin directory
-    logFileName = "amaroq_{timestamp}.log".format(timestamp=currentTimestamp)
+    logFileName = "amaroq_{timestamp}.log".format(timestamp=currenttime.strftime("%y%m%d%H%M%S.%F"))
 
     # override to output dir if exists
     if args.output_directory and os.path.isdir(args.output_directory):
@@ -510,8 +507,7 @@ def main():
         # check output file
         if os.path.isfile(outputFilePath):
             if args.force:
-                if verbose > 0:
-                    logging.info("Removing: \"{}\"".format(
+                logging.debug("Removing: \"{}\"".format(
                         outputFilePath))
                 os.remove(outputFilePath)
             else:
@@ -521,8 +517,7 @@ def main():
         # check summary output file
         if os.path.isfile(summaryFilePath):
             if args.force:
-                if verbose > 0:
-                    logging.info("Removing: \"{}\"".format(
+                logging.debug("Removing: \"{}\"".format(
                         summaryFilePath))
                 os.remove(summaryFilePath)
             else:
@@ -533,8 +528,7 @@ def main():
         # check active output file
         if args.active_only and os.path.isfile(activeFileName):
             if args.force:
-                if verbose > 0:
-                    logging.info("Removing: \"{}\"".format(
+                logging.debug("Removing: \"{}\"".format(
                         activeFileName))
                 os.remove(activeFileName)
             else:

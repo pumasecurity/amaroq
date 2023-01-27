@@ -54,8 +54,7 @@ amaroq_settings_schema = {
               "required": [
                 "alias",
                 "status",
-                "justification",
-                "expiryUtc"
+                "justification"
               ],
               "oneOf": [
                 {
@@ -81,8 +80,7 @@ amaroq_settings_schema = {
         "required": [
           "tool",
           "version",
-          "suppressions",
-          "thresholds"
+          "suppressions"
         ]
       }
     }

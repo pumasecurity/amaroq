@@ -1,0 +1,1500 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "SnykCode",
+          "semanticVersion": "1.0.0",
+          "version": "1.0.0",
+          "rules": [
+            {
+              "id": "csharp/Deserialization",
+              "name": "Deserialization",
+              "shortDescription": {
+                "text": "Deserialization of Untrusted Data"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "help": {
+                "markdown": "## Details\n\nSerialization is a process of converting an object into a sequence of bytes which can be persisted to a disk or database or can be sent through streams. The reverse process of creating object from sequence of bytes is called deserialization. Serialization is commonly used for communication (sharing objects between multiple hosts) and persistence (store the object state in a file or a database). It is an integral part of popular protocols like _Remote Method Invocation (RMI)_, _Java Management Extension (JMX)_, _Java Messaging System (JMS)_, _Action Message Format (AMF)_, _Java Server Faces (JSF) ViewState_, etc.\n\n_Deserialization of untrusted data_ ([CWE-502](https://cwe.mitre.org/data/definitions/502.html)), is when the application deserializes untrusted data without sufficiently verifying that the resulting data will be valid, letting the attacker to control the state or the flow of the execution.\n\nJava deserialization issues have been known for years. However, interest in the issue intensified greatly in 2015, when classes that could be abused to achieve remote code execution were found in a [popular library (Apache Commons Collection)](https://snyk.io/vuln/SNYK-JAVA-COMMONSCOLLECTIONS-30078). These classes were used in zero-days affecting IBM WebSphere, Oracle WebLogic and many other products.\n\n\nAn attacker just needs to identify a piece of software that has both a vulnerable class on its path, and performs deserialization on untrusted data. Then all they need to do is send the payload into the deserializer, getting the command executed.\n\n\n> Developers put too much trust in Java Object Serialization. Some even de-serialize objects pre-authentication. When deserializing an Object in Java you typically cast it to an expected type, and therefore Java's strict type system will ensure you only get valid object trees. Unfortunately, by the time the type checking happens, platform code has already created and executed significant logic. So, before the final type is checked a lot of code is executed from the readObject() methods of various objects, all of which is out of the developer's control. By combining the readObject() methods of various classes which are available on the classpath of the vulnerable application an attacker can execute functions (including calling Runtime.exec() to execute local OS commands).",
+                "text": ""
+              },
+              "properties": {
+                "tags": [
+                  "csharp"
+                ],
+                "categories": [
+                  "Security"
+                ],
+                "exampleCommitFixes": [],
+                "exampleCommitDescriptions": [],
+                "precision": "very-high",
+                "repoDatasetSize": 0,
+                "cwe": [
+                  "CWE-502"
+                ]
+              }
+            },
+            {
+              "id": "csharp/OR",
+              "name": "OR",
+              "shortDescription": {
+                "text": "Open Redirect"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "help": {
+                "markdown": "\n## Details\nAn open redirect attack takes place when a web application redirects the user to an unauthorized and untrusted site. In general, URL redirection refers to the ability of a website or application to redirect users to another site. This is often a benign and useful feature. For example, if a resource has moved to a new location, URL redirection can transfer the user to that location rather than displaying an error message.\nHowever, this ability can be exploited through social engineering, tricking the user into believing they are accessing one site when, in reality, they are being redirected to a dangerous site, such as a phishing site. Once there, the user may be further tricked into entering credentials or personally identifiable information (PII), believing they are still within the original, trusted domain. Attackers can then use these credentials to gain unauthorized access or leverage the user's PII for sale or ransom.\n\n### Best practices for prevention\n* When developing a site or web app, consider implementing a disclaimer page to remind users that they are leaving a secure site.\n* Adopt a zero-trust approach in which all input is treated with suspicion.\n* Validate all input against deny-lists to ensure it does not contain code to redirect the user. This method is good but inherently incomplete.\n* Be aware of all sources of untrusted input being sent to the server that could be used to redirect the user, such as cookies, URL components, filenames, query results, request headers, and more.\n* In particular, be aware of potential API calls that could send input indirectly to redirect the user.\n* To protect end users, use a firewall to block known malicious sites, train users to recognize basic signs of a phishing attack, and ensure that all network endpoints are patched with the most current updates.",
+                "text": ""
+              },
+              "properties": {
+                "tags": [
+                  "csharp"
+                ],
+                "categories": [
+                  "Security"
+                ],
+                "exampleCommitFixes": [
+                  {
+                    "commitURL": "https://github.com/dotnet/aspnetcore/commit/1de636cd18309070792b68888ca29c8b85fac98b?diff=split#diff-93b892cbb5eccde024488d2f7851dd4aL18",
+                    "lines": [
+                      {
+                        "line": "public virtual void ApplyRule(RewriteContext context)",
+                        "lineNumber": 16,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "{",
+                        "lineNumber": 17,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "    if (!context.HttpContext.Request.IsHttps)",
+                        "lineNumber": 18,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "    {",
+                        "lineNumber": 19,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "        var host = context.HttpContext.Request.Host;",
+                        "lineNumber": 20,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "var req = context.HttpContext.Request;",
+                        "lineNumber": 32,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "var newUrl = new StringBuilder().Append(\"https://\").Append(host).Append(req.PathBase).Append(req.Path).Append(req.QueryString);",
+                        "lineNumber": 33,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "context.HttpContext.Response.Redirect(newUrl.ToString());",
+                        "lineNumber": 34,
+                        "lineChange": "removed"
+                      },
+                      {
+                        "line": "var response = context.HttpContext.Response;",
+                        "lineNumber": 34,
+                        "lineChange": "added"
+                      },
+                      {
+                        "line": "response.StatusCode = StatusCode;",
+                        "lineNumber": 35,
+                        "lineChange": "added"
+                      },
+                      {
+                        "line": "response.Headers[HeaderNames.Location] = newUrl.ToString();",
+                        "lineNumber": 36,
+                        "lineChange": "added"
+                      },
+                      {
+                        "line": "context.Result = RuleResult.EndResponse;",
+                        "lineNumber": 37,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "context.Logger?.RedirectedToHttps();",
+                        "lineNumber": 38,
+                        "lineChange": "none"
+                      }
+                    ]
+                  }
+                ],
+                "exampleCommitDescriptions": [
+                  "Pin version variables to the ASP.NET Core 2.1.2 baseline",
+                  "This reverts our previous policy of cascading versions on all servicing updates."
+                ],
+                "precision": "very-high",
+                "repoDatasetSize": 1,
+                "cwe": [
+                  "CWE-601"
+                ]
+              }
+            },
+            {
+              "id": "xml/AspSslDisabled",
+              "name": "AspSslDisabled",
+              "shortDescription": {
+                "text": "ASP SSL Disabled"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "help": {
+                "markdown": "\n## References\n\n* [Require SSL Property](https://docs.microsoft.com/en-us/dotnet/api/system.web.security.formsauthentication.requiressl?view=netframework-4.8)",
+                "text": ""
+              },
+              "properties": {
+                "tags": [
+                  "xml"
+                ],
+                "categories": [
+                  "Security"
+                ],
+                "exampleCommitFixes": [],
+                "exampleCommitDescriptions": [],
+                "precision": "very-high",
+                "repoDatasetSize": 0,
+                "cwe": [
+                  "CWE-319"
+                ]
+              }
+            },
+            {
+              "id": "csharp/RequestValidationDisabled",
+              "name": "RequestValidationDisabled",
+              "shortDescription": {
+                "text": "Request Validation Disabled"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "help": {
+                "markdown": "## Details\n\nRequest validation, a feature of ASP.NET since version 1.1, prevents the server from accepting content containing un-encoded HTML.\n\nThis feature is designed to help prevent some script-injection attacks whereby client script code or HTML can be unknowingly submitted to a server, stored, and then presented to other users. Disabling this feature is not recommended.\n\nExample:\n\n```\npublic class StudentController\n{\n    [HttpPost]\n    [ValidateInput(false)]\n    public ActionResult StudentControllerMethod(string input) {\n        return input;\n    }\n}\n```\n\n\n## Remediation\n\n`ValidateInput` attribute should not be set on controller methods that are processing user input.\n\n\n## References\n\n* [Microsoft Request Validation](https://docs.microsoft.com/en-us/aspnet/whitepapers/request-validation)\n\n* [OWASP ASP.NET Request Validation](https://owasp.org/www-community/ASP-NET_Request_Validation)",
+                "text": ""
+              },
+              "properties": {
+                "tags": [
+                  "csharp"
+                ],
+                "categories": [
+                  "Security"
+                ],
+                "exampleCommitFixes": [
+                  {
+                    "commitURL": "https://github.com/Daniel15/Website/commit/b77070049d0f92a16fe37db8d1b364d12c4ac393?diff=split#diff-ef1ab157f2b720ad7736e2a7d3982aabL97",
+                    "lines": [
+                      {
+                        "line": "/// <param name=\"viewModel\"></param>",
+                        "lineNumber": 94,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "/// <returns></returns>",
+                        "lineNumber": 95,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "[HttpPost]",
+                        "lineNumber": 96,
+                        "lineChange": "removed"
+                      },
+                      {
+                        "line": "[ValidateInput(false)]",
+                        "lineNumber": 97,
+                        "lineChange": "removed"
+                      },
+                      {
+                        "line": "public virtual ActionResult Edit(EditViewModel viewModel, string slug = null)",
+                        "lineNumber": 98,
+                        "lineChange": "removed"
+                      },
+                      {
+                        "line": "[HttpPost(\"{year:int:length(4)}/{month:int:length(2)}/{slug}/edit\", Order = 1)]",
+                        "lineNumber": 93,
+                        "lineChange": "added"
+                      },
+                      {
+                        "line": "[HttpPost(\"blog/admin/new\", Order = 2)]",
+                        "lineNumber": 94,
+                        "lineChange": "added"
+                      },
+                      {
+                        "line": "public virtual async Task<ActionResult> Edit(EditViewModel viewModel, string slug = null)",
+                        "lineNumber": 95,
+                        "lineChange": "added"
+                      },
+                      {
+                        "line": "{",
+                        "lineNumber": 99,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "\t\t// Ensure valid",
+                        "lineNumber": 100,
+                        "lineChange": "none"
+                      }
+                    ]
+                  }
+                ],
+                "exampleCommitDescriptions": [
+                  "Update blog administration for ASP.NET MVC 5"
+                ],
+                "precision": "very-high",
+                "repoDatasetSize": 1,
+                "cwe": [
+                  "CWE-554"
+                ]
+              }
+            },
+            {
+              "id": "javascript/OR",
+              "name": "OR",
+              "shortDescription": {
+                "text": "Open Redirect"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "help": {
+                "markdown": "\n## Details\nAn open redirect attack takes place when a web application redirects the user to an unauthorized and untrusted site. In general, URL redirection refers to the ability of a website or application to redirect users to another site. This is often a benign and useful feature. For example, if a resource has moved to a new location, URL redirection can transfer the user to that location rather than displaying an error message.\nHowever, this ability can be exploited through social engineering, tricking the user into believing they are accessing one site when, in reality, they are being redirected to a dangerous site, such as a phishing site. Once there, the user may be further tricked into entering credentials or personally identifiable information (PII), believing they are still within the original, trusted domain. Attackers can then use these credentials to gain unauthorized access or leverage the user's PII for sale or ransom.\n\n### Best practices for prevention\n* When developing a site or web app, consider implementing a disclaimer page to remind users that they are leaving a secure site.\n* Adopt a zero-trust approach in which all input is treated with suspicion.\n* Validate all input against deny-lists to ensure it does not contain code to redirect the user. This method is good but inherently incomplete.\n* Be aware of all sources of untrusted input being sent to the server that could be used to redirect the user, such as cookies, URL components, filenames, query results, request headers, and more.\n* In particular, be aware of potential API calls that could send input indirectly to redirect the user.\n* To protect end users, use a firewall to block known malicious sites, train users to recognize basic signs of a phishing attack, and ensure that all network endpoints are patched with the most current updates.",
+                "text": ""
+              },
+              "properties": {
+                "tags": [
+                  "javascript"
+                ],
+                "categories": [
+                  "Security"
+                ],
+                "exampleCommitFixes": [
+                  {
+                    "commitURL": "https://github.com/cortexjs-legacy/cortex/commit/92eb65175f1d6ba43fde2b0c4cdc16f4d225e9b0?diff=split#diff-711974bf77eac87ecf8b855b7c952498L5",
+                    "lines": [
+                      {
+                        "line": "module.exports = function (fallback) {",
+                        "lineNumber": 3,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "    return function (req, res, next) {",
+                        "lineNumber": 4,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "        console.log('fallback', req.url, fallback);",
+                        "lineNumber": 5,
+                        "lineChange": "removed"
+                      },
+                      {
+                        "line": "        if ( fallback ) {",
+                        "lineNumber": 7,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "            res.redirect( fallback + req.url );",
+                        "lineNumber": 8,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "        }",
+                        "lineNumber": 9,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "    };",
+                        "lineNumber": 10,
+                        "lineChange": "none"
+                      }
+                    ]
+                  },
+                  {
+                    "commitURL": "https://github.com/mayeaux/nodetube/commit/a10415070dea30826a673fbff4de0d9e87d49d54?diff=split#diff-a9a8d893a8463ac387317e02eec99c96L115",
+                    "lines": [
+                      {
+                        "line": " // app.get(/\\/user\\/(.+)\\/live/, livestreamController.getLive);",
+                        "lineNumber": 111,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "/** redirect all routes to the pewtube.com equivalent **/",
+                        "lineNumber": 113,
+                        "lineChange": "removed"
+                      },
+                      {
+                        "line": "app.get('*', function(req, res, next){",
+                        "lineNumber": 114,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "    return res.redirect(frontendAppUrl + req.path);",
+                        "lineNumber": 118,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "  });",
+                        "lineNumber": 119,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "}",
+                        "lineNumber": 120,
+                        "lineChange": "none"
+                      }
+                    ]
+                  },
+                  {
+                    "commitURL": "https://github.com/bluemir/node-wikinote/commit/1ff580c2dd52e99fc2f39def424ab09e2cef9884?diff=split#diff-d199589ae6d729b34c26ac4aa837922dL32",
+                    "lines": [
+                      {
+                        "line": "  })",
+                        "lineNumber": 29,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "}",
+                        "lineNumber": 30,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "wikiApp.save = function(req, res){",
+                        "lineNumber": 31,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "  var data = req.body.data;",
+                        "lineNumber": 32,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "  wikiFS.writeWiki(req.wikipath, data, req.user).then(function(){",
+                        "lineNumber": 34,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "    res.redirect(req.path);",
+                        "lineNumber": 35,
+                        "lineChange": "removed"
+                      },
+                      {
+                        "line": "    res.redirect(303, req.path);",
+                        "lineNumber": 35,
+                        "lineChange": "added"
+                      },
+                      {
+                        "line": "  }).fail(function(err){",
+                        "lineNumber": 36,
+                        "lineChange": "none"
+                      },
+                      {
+                        "line": "    console.log(err);",
+                        "lineNumber": 37,
+                        "lineChange": "none"
+                      }
+                    ]
+                  }
+                ],
+                "exampleCommitDescriptions": [
+                  "- illegal redirect now yields 406 error",
+                  "added news files / cpagination chevron in own file",
+                  "improve url save tests"
+                ],
+                "precision": "very-high",
+                "repoDatasetSize": 591,
+                "cwe": [
+                  "CWE-601"
+                ]
+              }
+            },
+            {
+              "id": "csharp/InsecureCipher",
+              "name": "InsecureCipher",
+              "shortDescription": {
+                "text": "Use of a Broken or Risky Cryptographic Algorithm"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "help": {
+                "markdown": "\n## Details\n\nWhen sensitive information is transmitted with weak encryption, attackers are potentially able to intercept the information and decrypt it, with a wide range of negative consequences. This includes accessing code or content they are not authorized to view and changing or taking down a site or app, often with a demand for ransom. Every developer is aware of the risks of transmitting sensitive information in plain text. Yet many still use outdated or inferior cryptographic methods to protect information under their control. As cryptographic methods grow stronger with time, code must be updated to incorporate more modern and secure cryptography.\n\n### Best practices for prevention\n* Avoid using DES, and use AES (in a secure mode, such as Galois/Counter Mode) or another strong encryption algorithm instead.\n* Be aware of outdated hashes, such as MD5 and SHA1 (along with many others); recognize and implement current cryptographic standards instead.\n* Never use custom or DIY security and cryptographic methods; instead, use methods that are part of an accepted library or framework.\n* Ensure that code dealing with cryptographic methods is highly modular and can be easily replaced as security standards change.\n* Increase developer awareness of proper encryption key management and protection to ensure best practices throughout the application.",
+                "text": ""
+              },
+              "properties": {
+                "tags": [
+                  "csharp"
+                ],
+                "categories": [
+                  "Security"
+                ],
+                "exampleCommitFixes": [],
+                "exampleCommitDescriptions": [],
+                "precision": "very-high",
+                "repoDatasetSize": 0,
+                "cwe": [
+                  "CWE-327"
+                ]
+              }
+            },
+            {
+              "id": "csharp/InsecureHash",
+              "name": "InsecureHash",
+              "shortDescription": {
+                "text": "Use of Password Hash With Insufficient Computational Effort"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "help": {
+                "markdown": "\n## Details\n\nSensitive information should never be stored in plain text, since this makes it very easy for unauthorized users, whether malicious insiders or outside attackers, to access. Hashing methods are used to make stored passwords and other sensitive data unreadable to users. For example, when a password is defined for the first time, it is hashed and then stored. The next time that user attempts to log on, the password they enter is hashed following the same procedure and compared with the stored value. In this way, the original password never needs to be stored in the system.\n\nHashing is a one-way scheme, meaning a hashed password cannot be reverse engineered. However, if an outdated or custom programmed hashing scheme is used, it becomes simple for an attacker with powerful modern computing power to gain access to the hashes used. This opens up access to all stored password information, leading to breached security. Therefore, it is essential for developers to understand modern, secure password hashing techniques.\n\n### Best practices for prevention\n* Use strong standard algorithms for hashing rather than simpler but outdated methods or DIY hashing schemes, which may have inherent weaknesses.\n* Use modular design for all code dealing with hashing so it can be swapped out as security standards change over time.\n* Use salting in combination with hashing (While this places more demands on resources, it is an essential step for tighter security.).\n* Implement zero-trust architecture to ensure that access to password data is granted only for legitimate business purposes.\n* Increase developer awareness of current standards in data security and cryptography.",
+                "text": ""
+              },
+              "properties": {
+                "tags": [
+                  "csharp"
+                ],
+                "categories": [
+                  "Security"
+                ],
+                "exampleCommitFixes": [],
+                "exampleCommitDescriptions": [],
+                "precision": "very-high",
+                "repoDatasetSize": 0,
+                "cwe": [
+                  "CWE-916"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "csharp/Deserialization",
+          "ruleIndex": 0,
+          "level": "warning",
+          "message": {
+            "text": "(BETA Suggestion) Using JsonSerializerSettings with TypeNameHandling property set to TypeNameHandling.All, may result in an Unsafe Deserialization vulnerability where it is used to deserialize untrusted object.",
+            "markdown": "(BETA Suggestion) Using JsonSerializerSettings with TypeNameHandling property set to {0}.{1}, may result in an Unsafe Deserialization vulnerability where it is used to deserialize untrusted object.",
+            "arguments": [
+              "[TypeNameHandling](0)",
+              "[All](1)"
+            ]
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/Common/Deserialize/JsonDeserialize.cs",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 11,
+                  "endLine": 11,
+                  "startColumn": 17,
+                  "endColumn": 55
+                }
+              }
+            }
+          ],
+          "fingerprints": {
+            "0": "e486a23ee721cd224426d3d98eb1aab3277dc67da13d3ef3c500e0dda0532f2d",
+            "1": "96a1caac.39b8d118.64fb9117.41c27399.be64e257.ce1ed997.5f1fa597.95eb89ca.96a1caac.2374ac46.64fb9117.41c27399.be64e257.1f3296da.5f1fa597.95eb89ca"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "id": 0,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Common/Deserialize/JsonDeserialize.cs",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 11,
+                            "endLine": 11,
+                            "startColumn": 17,
+                            "endColumn": 32
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "id": 1,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Common/Deserialize/JsonDeserialize.cs",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 11,
+                            "endLine": 11,
+                            "startColumn": 53,
+                            "endColumn": 55
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "priorityScore": 301,
+            "priorityScoreFactors": [
+              {
+                "label": true,
+                "type": "hotFileCodeFlow"
+              }
+            ]
+          }
+        },
+        {
+          "ruleId": "csharp/OR",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "(BETA Suggestion) Unsanitized input from an HTTP parameter flows into Redirect, where it is used as input for request redirection. This may result in an OpenRedirect vulnerability.",
+            "markdown": "(BETA Suggestion) Unsanitized input from {0} {1} into {2}, where it is used as input for request redirection. This may result in an OpenRedirect vulnerability.",
+            "arguments": [
+              "[an HTTP parameter](0)",
+              "[flows](1),(2),(3),(4)",
+              "[Redirect](5)"
+            ]
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/Raccoon/Controllers/AccountController.cs",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 446,
+                  "endLine": 446,
+                  "startColumn": 20,
+                  "endColumn": 27
+                }
+              }
+            }
+          ],
+          "fingerprints": {
+            "0": "466774e5fbb278779ac3a530ed52712488a4c50fd23fbcf51b78f6773bb952cb",
+            "1": "94f9c48f.2b246251.8848c1eb.f5757239.a758fffc.5e8ec5d3.5f1fa597.b01378a1.2139e49e.443cf8a9.1d318ef7.ed3dc236.90f57c72.a0ea2ac0.4e7651ea.ea666449"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "id": 0,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Raccoon/Controllers/AccountController.cs",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 66,
+                            "endLine": 66,
+                            "startColumn": 69,
+                            "endColumn": 84
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "id": 1,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Raccoon/Controllers/AccountController.cs",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 66,
+                            "endLine": 66,
+                            "startColumn": 69,
+                            "endColumn": 84
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "id": 2,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Raccoon/Controllers/AccountController.cs",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 80,
+                            "endLine": 80,
+                            "startColumn": 44,
+                            "endColumn": 52
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "id": 3,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Raccoon/Controllers/AccountController.cs",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 444,
+                            "endLine": 444,
+                            "startColumn": 46,
+                            "endColumn": 61
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "id": 4,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Raccoon/Controllers/AccountController.cs",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 446,
+                            "endLine": 446,
+                            "startColumn": 29,
+                            "endColumn": 37
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "id": 5,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Raccoon/Controllers/AccountController.cs",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 446,
+                            "endLine": 446,
+                            "startColumn": 20,
+                            "endColumn": 27
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "priorityScore": 751,
+            "priorityScoreFactors": [
+              {
+                "label": true,
+                "type": "hotFileCodeFlow"
+              },
+              {
+                "label": true,
+                "type": "fixExamples"
+              }
+            ]
+          }
+        },
+        {
+          "ruleId": "xml/AspSslDisabled",
+          "ruleIndex": 2,
+          "level": "warning",
+          "message": {
+            "text": "(BETA Suggestion) ASP.NET MVC is used and requireSSL is set to false in an ASP.NET config file.",
+            "markdown": "(BETA Suggestion) {0} is used and {1} is set to {2} in an ASP.NET config file.",
+            "arguments": [
+              "[ASP.NET MVC](0)",
+              "[requireSSL](1)",
+              "[false](2)"
+            ]
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/Skunk/Web.config",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 28,
+                  "endLine": 28,
+                  "startColumn": -28,
+                  "endColumn": -2
+                }
+              }
+            }
+          ],
+          "fingerprints": {
+            "0": "fd89fc68d81444cf8605687e8c58181353ec563151fdf69ad11acbc17534e4fe",
+            "1": "02a5002d.7ec12ab1.18d4530f.2e20d605.acf3c396.31195e2c.00292d65.8e323825.02a5002d.abc64e4e.1ba81ec8.dffa982e.99806e07.31195e2c.ac9650ac.f580bd4f"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "id": 0,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Raccoon/Global.asax.cs",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 1,
+                            "endLine": 1,
+                            "startColumn": 2,
+                            "endColumn": 22
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "id": 1,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Skunk/Web.config",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 28,
+                            "endLine": 28,
+                            "startColumn": -28,
+                            "endColumn": -2
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "id": 2,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Skunk/Web.config",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 28,
+                            "endLine": 28,
+                            "startColumn": -28,
+                            "endColumn": -2
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "priorityScore": 301,
+            "priorityScoreFactors": [
+              {
+                "label": true,
+                "type": "hotFileCodeFlow"
+              }
+            ]
+          }
+        },
+        {
+          "ruleId": "csharp/RequestValidationDisabled",
+          "ruleIndex": 3,
+          "level": "warning",
+          "message": {
+            "text": "(BETA Suggestion) The ValidateInput attribute is set to False. Request Validation is generally desirable and should be left enabled as a defense in depth measure to prevent XSS attacks.",
+            "markdown": "(BETA Suggestion) The {0} attribute is set to False. Request Validation is generally desirable and should be left enabled as a defense in depth measure to prevent XSS attacks.",
+            "arguments": [
+              "[ValidateInput](0)"
+            ]
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/Raccoon/Controllers/HuntController.cs",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 47,
+                  "endLine": 47,
+                  "startColumn": 9,
+                  "endColumn": 18
+                }
+              }
+            }
+          ],
+          "fingerprints": {
+            "0": "37afca7019284cd7e718f4a803ddb2fa37333bd2dddc8daa806473e0d687eb5e",
+            "1": "6c470f92.db552dcf.1d318ef7.945116d4.63feb440.f90bf5fe.ce0185b2.e392fb0e.6c470f92.db552dcf.1d318ef7.945116d4.63feb440.c220cf1f.ce0185b2.e392fb0e"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "id": 0,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Raccoon/Controllers/HuntController.cs",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 48,
+                            "endLine": 48,
+                            "startColumn": 10,
+                            "endColumn": 22
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "priorityScore": 501,
+            "priorityScoreFactors": [
+              {
+                "label": true,
+                "type": "hotFileCodeFlow"
+              },
+              {
+                "label": true,
+                "type": "fixExamples"
+              }
+            ]
+          }
+        },
+        {
+          "ruleId": "javascript/OR",
+          "ruleIndex": 4,
+          "level": "warning",
+          "message": {
+            "text": "Unsanitized input from the document location flows into window.location, where it is used as an URL to redirect the user. This may result in an Open Redirect vulnerability.",
+            "markdown": "Unsanitized input from {0} {1} into {2}, where it is used as an URL to redirect the user. This may result in an Open Redirect vulnerability.",
+            "arguments": [
+              "[the document location](0)",
+              "[flows](1),(2),(3),(4),(5),(6),(7)",
+              "[window.location](8)"
+            ]
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/Skunk/Scripts/WebForms/SmartNav.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 34,
+                  "endLine": 34,
+                  "startColumn": 36,
+                  "endColumn": 40
+                }
+              }
+            }
+          ],
+          "fingerprints": {
+            "0": "f26530a69812648df96c15f8c873649f79c8b0674eceb7944f90c0b5cd23a70d",
+            "1": "2d06e3d6.4773f344.dae89c6e.ead70b17.ef9f7d82.8020cfdf.cd61fc56.3728ba6c.4a73bc7e.bf4464f1.bc7e7e4c.c8688b2b.00479018.8020cfdf.39fb310d.3728ba6c"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "id": 0,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Skunk/Scripts/WebForms/SmartNav.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 26,
+                            "endLine": 26,
+                            "startColumn": 21,
+                            "endColumn": 36
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "id": 1,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Skunk/Scripts/WebForms/SmartNav.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 26,
+                            "endLine": 26,
+                            "startColumn": 21,
+                            "endColumn": 36
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "id": 2,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Skunk/Scripts/WebForms/SmartNav.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 26,
+                            "endLine": 26,
+                            "startColumn": 13,
+                            "endColumn": 17
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "id": 3,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Skunk/Scripts/WebForms/SmartNav.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 27,
+                            "endLine": 27,
+                            "startColumn": 21,
+                            "endColumn": 25
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "id": 4,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Skunk/Scripts/WebForms/SmartNav.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 28,
+                            "endLine": 28,
+                            "startColumn": 38,
+                            "endColumn": 42
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "id": 5,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Skunk/Scripts/WebForms/SmartNav.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 29,
+                            "endLine": 29,
+                            "startColumn": 16,
+                            "endColumn": 20
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "id": 6,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Skunk/Scripts/WebForms/SmartNav.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 31,
+                            "endLine": 31,
+                            "startColumn": 16,
+                            "endColumn": 20
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "id": 7,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Skunk/Scripts/WebForms/SmartNav.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 34,
+                            "endLine": 34,
+                            "startColumn": 36,
+                            "endColumn": 40
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "id": 8,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Skunk/Scripts/WebForms/SmartNav.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 34,
+                            "endLine": 34,
+                            "startColumn": 36,
+                            "endColumn": 40
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "priorityScore": 551,
+            "priorityScoreFactors": [
+              {
+                "label": true,
+                "type": "hotFileSource"
+              },
+              {
+                "label": true,
+                "type": "fixExamples"
+              }
+            ]
+          }
+        },
+        {
+          "ruleId": "csharp/InsecureCipher",
+          "ruleIndex": 5,
+          "level": "error",
+          "message": {
+            "text": "(BETA Suggestion) The Rijndael cipher is insecure. Consider using AES instead.",
+            "markdown": "(BETA Suggestion) The {0} cipher is insecure. Consider using AES instead.",
+            "arguments": [
+              "[Rijndael](0)"
+            ]
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/Common/Cryptography/KeyManagement/KeyReaderWriter.cs",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 117,
+                  "endLine": 117,
+                  "startColumn": 51,
+                  "endColumn": 65
+                }
+              }
+            }
+          ],
+          "fingerprints": {
+            "0": "7847f8f87eaeec5eed7b64f8e3b1584b452510a35853e17916ca47506c368571",
+            "1": "673a8d6a.7c0a48fd.506d8922.16d514a5.015eac66.e19d4938.fda4370d.55a72c19.673a8d6a.7c0a48fd.506d8922.16d514a5.015eac66.e19d4938.fda4370d.55a72c19"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "id": 0,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Common/Cryptography/KeyManagement/KeyReaderWriter.cs",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 117,
+                            "endLine": 117,
+                            "startColumn": 51,
+                            "endColumn": 65
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "priorityScore": 603,
+            "priorityScoreFactors": [
+              {
+                "label": true,
+                "type": "multipleOccurrence"
+              },
+              {
+                "label": true,
+                "type": "hotFileSource"
+              }
+            ]
+          }
+        },
+        {
+          "ruleId": "csharp/InsecureCipher",
+          "ruleIndex": 5,
+          "level": "error",
+          "message": {
+            "text": "(BETA Suggestion) The Rijndael cipher is insecure. Consider using AES instead.",
+            "markdown": "(BETA Suggestion) The {0} cipher is insecure. Consider using AES instead.",
+            "arguments": [
+              "[Rijndael](0)"
+            ]
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/Common/Cryptography/KeyManagement/KeyReaderWriter.cs",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 165,
+                  "endLine": 165,
+                  "startColumn": 51,
+                  "endColumn": 65
+                }
+              }
+            }
+          ],
+          "fingerprints": {
+            "0": "66e4ea51fab0faefe1e39b39292e2e5a163ec95fee80cfd7a46599fdcde68530",
+            "1": "673a8d6a.7c0a48fd.506d8922.16d514a5.015eac66.e19d4938.fda4370d.55a72c19.673a8d6a.7c0a48fd.506d8922.16d514a5.015eac66.e19d4938.fda4370d.55a72c19"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "id": 0,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Common/Cryptography/KeyManagement/KeyReaderWriter.cs",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 165,
+                            "endLine": 165,
+                            "startColumn": 51,
+                            "endColumn": 65
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "priorityScore": 603,
+            "priorityScoreFactors": [
+              {
+                "label": true,
+                "type": "multipleOccurrence"
+              },
+              {
+                "label": true,
+                "type": "hotFileSource"
+              }
+            ]
+          }
+        },
+        {
+          "ruleId": "csharp/InsecureCipher",
+          "ruleIndex": 5,
+          "level": "error",
+          "message": {
+            "text": "(BETA Suggestion) The DES cipher is insecure. Consider using AES instead.",
+            "markdown": "(BETA Suggestion) The {0} cipher is insecure. Consider using AES instead.",
+            "arguments": [
+              "[DES](0)"
+            ]
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/Common/Cryptography/Encryption.cs",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 48,
+                  "endLine": 48,
+                  "startColumn": 34,
+                  "endColumn": 57
+                }
+              }
+            }
+          ],
+          "fingerprints": {
+            "0": "4ddd0174a5da82ca0a94172e9e319eba0b1e3e8bdafd913da229d381c52e3f54",
+            "1": "600b0da4.e20a1f95.d702be1d.635fcc40.37bfedfd.479289af.38a18dda.afa3b4d7.600b0da4.e20a1f95.d702be1d.635fcc40.37bfedfd.479289af.38a18dda.afa3b4d7"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "id": 0,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Common/Cryptography/Encryption.cs",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 48,
+                            "endLine": 48,
+                            "startColumn": 34,
+                            "endColumn": 57
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "priorityScore": 603,
+            "priorityScoreFactors": [
+              {
+                "label": true,
+                "type": "multipleOccurrence"
+              },
+              {
+                "label": true,
+                "type": "hotFileSource"
+              }
+            ]
+          }
+        },
+        {
+          "ruleId": "csharp/InsecureCipher",
+          "ruleIndex": 5,
+          "level": "error",
+          "message": {
+            "text": "(BETA Suggestion) The DES cipher is insecure. Consider using AES instead.",
+            "markdown": "(BETA Suggestion) The {0} cipher is insecure. Consider using AES instead.",
+            "arguments": [
+              "[DES](0)"
+            ]
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/Common/Cryptography/Encryption.cs",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 103,
+                  "endLine": 103,
+                  "startColumn": 34,
+                  "endColumn": 57
+                }
+              }
+            }
+          ],
+          "fingerprints": {
+            "0": "e1188255e9f350bb50a5b0ab6aa167cf3701f664520100ec346ba086b25b9099",
+            "1": "600b0da4.e20a1f95.d702be1d.635fcc40.37bfedfd.479289af.38a18dda.afa3b4d7.600b0da4.e20a1f95.d702be1d.635fcc40.37bfedfd.479289af.38a18dda.afa3b4d7"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "id": 0,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Common/Cryptography/Encryption.cs",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 103,
+                            "endLine": 103,
+                            "startColumn": 34,
+                            "endColumn": 57
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "priorityScore": 603,
+            "priorityScoreFactors": [
+              {
+                "label": true,
+                "type": "multipleOccurrence"
+              },
+              {
+                "label": true,
+                "type": "hotFileSource"
+              }
+            ]
+          }
+        },
+        {
+          "ruleId": "csharp/InsecureHash",
+          "ruleIndex": 6,
+          "level": "warning",
+          "message": {
+            "text": "(BETA Suggestion) The MD5 hash (used by global::System.Security.Cryptography.MD5CryptoServiceProvider) is insecure. Consider changing it to a secure hash algorithm.",
+            "markdown": "(BETA Suggestion) The MD5 hash (used by {0}) is insecure. Consider changing it to a secure hash algorithm.",
+            "arguments": [
+              "[global::System.Security.Cryptography.MD5CryptoServiceProvider](0)"
+            ]
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/Common/Cryptography/Hashing.cs",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 43,
+                  "endLine": 43,
+                  "startColumn": 38,
+                  "endColumn": 61
+                }
+              }
+            }
+          ],
+          "fingerprints": {
+            "0": "607c5f330ad243136cb188e9627ca3b95a5bfa088ea238abae26b6beb369c0d4",
+            "1": "5c8049f6.c0b45b9c.8659bcd7.fcfaa134.4560c7e0.409bbe8a.ac5cfe72.47ff3065.53d611b0.39b8d118.f729af47.f5757239.b4e65de6.409bbe8a.097009c3.4774ee6e"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "id": 0,
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/Common/Cryptography/Hashing.cs",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 43,
+                            "endLine": 43,
+                            "startColumn": 38,
+                            "endColumn": 61
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "priorityScore": 301,
+            "priorityScoreFactors": [
+              {
+                "label": true,
+                "type": "hotFileCodeFlow"
+              }
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "coverage": [
+          {
+            "files": 180,
+            "isSupported": true,
+            "lang": "C# (beta)"
+          },
+          {
+            "files": 19,
+            "isSupported": true,
+            "lang": "XML"
+          },
+          {
+            "files": 79,
+            "isSupported": true,
+            "lang": "JavaScript"
+          },
+          {
+            "files": 64,
+            "isSupported": true,
+            "lang": "TypeScript"
+          },
+          {
+            "files": 2,
+            "isSupported": false,
+            "lang": "Unknown"
+          }
+        ]
+      }
+    }
+  ]
+}
