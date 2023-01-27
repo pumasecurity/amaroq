@@ -9,10 +9,10 @@ aws ecr-public get-login-password | docker login --username AWS --password-stdin
 
 # build image
 docker image build --build-arg VERSION=${RELEASE_VERSION} --tag ${AWS_PUBLIC_ECR_ORG_URI}/amaroq:${RELEASE_VERSION} .
-docker image tag pumasecurity/amaroq ${AWS_PUBLIC_ECR_ORG_URI}/amaroq:latest
+docker image tag ${AWS_PUBLIC_ECR_ORG_URI}/amaroq:${RELEASE_VERSION} ${AWS_PUBLIC_ECR_ORG_URI}/amaroq:latest
 
 # push image + tags
-docker image push --all-tags public.ecr.aws/pumasecurity/amaroq
+docker image push --all-tags ${AWS_PUBLIC_ECR_ORG_URI}/amaroq
 
 # sign image
 cosign sign ${AWS_PUBLIC_ECR_ORG_URI}/amaroq:${RELEASE_VERSION}
