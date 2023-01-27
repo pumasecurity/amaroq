@@ -77,13 +77,13 @@ jobs:
         shell: bash
         run: |
           docker run -v ${PWD}/docs/samples/snyk-oss:/scan-input -v ${PWD}/docs/samples/settings:/settings -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool SnykOpenSource --current /scan-input/snyk-oss_1.json --output-directory /scan-output --output-filename snyk-oss_1.sarif --organization-id "${{ github.repository_owner }}" --project-id "${{ github.repository }}" --settings /settings/settings.yaml
-          docker run -v ${PWD}/docs/samples/snyk-oss:/scan-input -v ${PWD}/docs/samples/settings:/settings -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool SnykOpenSource --previous /scan-output/snyk-oss_1_previous.sarif --current /scan-input/snyk-oss_2.json --output-directory /scan-output --output-filename snyk-oss_2.sarif --organization-id "${{ github.repository_owner }}" --project-id "${{ github.repository }}" --settings /settings/settings.yaml
+          docker run -v ${PWD}/docs/samples/snyk-oss:/scan-input -v ${PWD}/docs/samples/settings:/settings -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool SnykOpenSource --previous /scan-input/snyk-oss_1_previous.sarif --current /scan-input/snyk-oss_2.json --output-directory /scan-output --output-filename snyk-oss_2.sarif --organization-id "${{ github.repository_owner }}" --project-id "${{ github.repository }}" --settings /settings/settings.yaml
 
       - name: Snyk Code
         shell: bash
         run: |
           docker run -v ${PWD}/docs/samples/snyk-code:/scan-input -v ${PWD}/docs/samples/settings:/settings -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool SnykCode --current /scan-input/snyk-raw-v1.sarif --output-directory /scan-output --output-filename snyk-v1.sarif --organization-id "${{ github.repository_owner }}" --project-id "${{ github.repository }}" --settings /settings/settings.yaml
-          docker run -v ${PWD}/docs/samples/snyk-code:/scan-input -v ${PWD}/docs/samples/settings:/settings -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool SnykCode --previous /scan-output/snyk-v1_previous.sarif --current /scan-input/snyk-raw-v2.sarif --output-directory /scan-output --output-filename snyk-v2.sarif --organization-id "${{ github.repository_owner }}" --project-id "${{ github.repository }}" --settings /settings/settings.yaml
+          docker run -v ${PWD}/docs/samples/snyk-code:/scan-input -v ${PWD}/docs/samples/settings:/settings -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool SnykCode --previous /scan-input/snyk-v1_previous.sarif --current /scan-input/snyk-raw-v2.sarif --output-directory /scan-output --output-filename snyk-v2.sarif --organization-id "${{ github.repository_owner }}" --project-id "${{ github.repository }}" --settings /settings/settings.yaml
 
       - name: Run Unit Tests
         run: /bin/bash ./build/bats.sh ${{ github.workspace }}/tests ${{ env.TEST_DIRECTORY }}
