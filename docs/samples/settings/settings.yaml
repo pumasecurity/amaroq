@@ -30,13 +30,13 @@ settings:
         status: Accepted
         justification: False positive
         results-guids:
-          - 7e1ff826-2cf2-4d0a-9338-489efe666bd8
+          - e646e418-af41-40a7-b71e-ff6a553a6788
       - alias: eric.mead
         status: Accepted
         justification: Known Guid with expired suppression date
         expiryUtc: 2022-10-30T00:00:00
         results-guids:
-          - 977e52a5-05d0-450a-aee1-f72429887018
+          - 287cc168-7a3a-4459-8a68-c21b33b73d34
       - expression: RuleId == 'SNYK-DOTNET-BOOTSTRAP-450216'
         alias: eric.mead
         status: Accepted
