@@ -8,7 +8,7 @@ RELEASE_VERSION=$2
 aws ecr-public get-login-password | docker login --username AWS --password-stdin ${AWS_PUBLIC_ECR_ORG_URI}
 
 # build image
-docker image build --build-arg VERSION=${RELEASE_VERSION} pumasecurity/amaroq .
+docker build --build-arg VERSION=${RELEASE_VERSION} pumasecurity/amaroq .
 docker image tag pumasecurity/amaroq ${AWS_PUBLIC_ECR_ORG_URI}/amaroq:${RELEASE_VERSION}
 docker image tag pumasecurity/amaroq ${AWS_PUBLIC_ECR_ORG_URI}/amaroq:latest
 
