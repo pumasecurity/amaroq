@@ -13,7 +13,7 @@ load '../node_modules/bats-file/load'
     assert_equal "$results" "38"
 }
 
-@test "snykoss-2-suppressed" {
+@test "snykoss-1-suppressed" {
     results=$(jq -r '.summary.suppressed' $SCAN_DIRECTORY/summary_snyk-oss_1.json)
     assert_equal "$results" "3"
 }
