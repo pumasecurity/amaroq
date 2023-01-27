@@ -1,20 +1,11 @@
-name: Amaroq Deployment
+name: Amaroq Unit Tests
 
 on:
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
-    inputs:
-      version:
-        description: "Version (e.g. v0.1)"
-        required: true
-  # release:
-  #   types: [created]
-  #   branches:
-  #     - main
-  #   paths-ignore:
-  #     - ".github/**"
 
 permissions:
-  id-token: write # write jwt token
   actions: read # read gh actions
   contents: read # read access to the repo
   checks: write # unit test results
@@ -26,18 +17,13 @@ jobs:
     env:
       SCAN_DIRECTORY: ${{ github.workspace }}/scan-results
       TEST_DIRECTORY: ${{ github.workspace }}/test-results
+      VERSION: "latest"
     steps:
       # Install, smoke libs, and configure
       - name: Initialize
         shell: bash
         run: |
-          if [[ "${{ github.event.inputs.version }}" == "" ]]; then 
-            VERSION=${GITHUB_REF/refs\/tags\//}
-          else
-            VERSION=${{ github.event.inputs.version }}
-          fi
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
-          echo "Building Amaroq ${VERSION}"
+          echo "Building Amaroq ${{ env.VERSION }}"
           echo "Docker:"
           docker --version
           echo "Scan directory: ${{ env.SCAN_DIRECTORY }}"
