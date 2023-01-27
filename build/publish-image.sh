@@ -15,7 +15,8 @@ docker image tag ${AWS_PUBLIC_ECR_ORG_URI}/amaroq:${RELEASE_VERSION} ${AWS_PUBLI
 docker image push --all-tags ${AWS_PUBLIC_ECR_ORG_URI}/amaroq
 
 # sign image
-cosign sign ${AWS_PUBLIC_ECR_ORG_URI}/amaroq:${RELEASE_VERSION}
+IMAGE_DIGEST=$(docker image inspect ${AWS_PUBLIC_ECR_ORG_URI}/amaroq:${RELEASE_VERSION} | jq -r '.[].Id')
+cosign sign ${AWS_PUBLIC_ECR_ORG_URI}/amaroq@${IMAGE_DIGEST}
 
 # verify image
-cosign verify -output json ${ECR_REPOSITORY_URI}:${RELEASE_VERSION}
+cosign verify --output json ${AWS_PUBLIC_ECR_ORG_URI}/amaroq:${RELEASE_VERSION} | jq
