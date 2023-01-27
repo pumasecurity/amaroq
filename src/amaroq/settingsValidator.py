@@ -54,8 +54,7 @@ amaroq_settings_schema = {
               "required": [
                 "alias",
                 "status",
-                "justification",
-                "expiryUtc"
+                "justification"
               ],
               "oneOf": [
                 {

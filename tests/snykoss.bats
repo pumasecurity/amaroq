@@ -29,12 +29,12 @@ load '../node_modules/bats-file/load'
 
 @test "snykoss-2-unchanged" {
     results=$(jq -r '.summary.unchanged' $SCAN_DIRECTORY/summary_snyk-oss_2.json)
-    assert_equal "$results" "36"
+    assert_equal "$results" "32"
 }
 
 @test "snykoss-2-suppressed" {
     results=$(jq -r '.summary.suppressed' $SCAN_DIRECTORY/summary_snyk-oss_2.json)
-    assert_equal "$results" "0"
+    assert_equal "$results" "4"
 }
 
 @test "snykoss-2-date-filter" {

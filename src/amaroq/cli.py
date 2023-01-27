@@ -38,8 +38,7 @@ supportedTools: Iterable[str] = ["GenericSarif", "SnykOpenSource", "Nessus"]
        
 def execute_cmd_not_visible(cmd):
     try:
-        if verbose > 0:
-            logging.debug("Executing command: \"{}\"".format(cmd))
+        logging.debug("Executing command: \"{}\"".format(cmd))
         out = subprocess.run(cmd, shell=True, universal_newlines=True,
                              check=False, capture_output=False, stdout=subprocess.DEVNULL)
     except subprocess.CalledProcessError as err:
@@ -52,9 +51,7 @@ def execute_cmd_not_visible(cmd):
 
 def execute_command(cmd, stdout=PIPE):
     try:
-        if verbose > 0:
-            logging.debug("Executing command: \"{}\"".format(cmd))
-
+        logging.debug("Executing command: \"{}\"".format(cmd))
         process = Popen(split(cmd), stdout=stdout,
                         stderr=STDOUT, encoding='utf8')
 
@@ -75,8 +72,7 @@ def execute_command(cmd, stdout=PIPE):
 
 def execute_command_with_output(cmd):
     try:
-        if verbose > 0:
-            logging.debug("Executing command: \"{}\"".format(cmd))
+        logging.debug("Executing command: \"{}\"".format(cmd))
         rc = subprocess.run(cmd, encoding='utf8',
                             shell=True, universal_newlines=True)
         return rc
@@ -92,10 +88,9 @@ def apply_suppression_sarif_log(sarifResults:str, alias:str, expression: str, st
     if expiryUtc :
         cmd = cmd + ' --expiryUtc "{expiryUtc}"'.format(expiryUtc=expiryUtc)
     if resultsGuids:
-        cmd = cmd + ' --results-guids "{guids}"'.format(guids=resultsGuids)
+        cmd = cmd + ' --results-guids "{guids}"'.format(guids=",".join("{0}".format(r) for r in resultsGuids))
     if expression:
         cmd = cmd + ' --expression "{expression}"'.format(expression=expression)
-
     # run sarif suppress command
     _rc = execute_command(cmd)
     if _rc > 0:
@@ -510,8 +505,7 @@ def main():
         # check output file
         if os.path.isfile(outputFilePath):
             if args.force:
-                if verbose > 0:
-                    logging.info("Removing: \"{}\"".format(
+                logging.debug("Removing: \"{}\"".format(
                         outputFilePath))
                 os.remove(outputFilePath)
             else:
@@ -521,8 +515,7 @@ def main():
         # check summary output file
         if os.path.isfile(summaryFilePath):
             if args.force:
-                if verbose > 0:
-                    logging.info("Removing: \"{}\"".format(
+                logging.debug("Removing: \"{}\"".format(
                         summaryFilePath))
                 os.remove(summaryFilePath)
             else:
@@ -533,8 +526,7 @@ def main():
         # check active output file
         if args.active_only and os.path.isfile(activeFileName):
             if args.force:
-                if verbose > 0:
-                    logging.info("Removing: \"{}\"".format(
+                logging.debug("Removing: \"{}\"".format(
                         activeFileName))
                 os.remove(activeFileName)
             else:
