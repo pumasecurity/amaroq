@@ -72,6 +72,7 @@ jobs:
         shell: bash
         run: |
           docker run -v ${PWD}/docs/samples/nessus:/scan-input -v ${PWD}/docs/samples/settings:/settings -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool Nessus --current /scan-input/10.3.1.112_1.nessus --output-directory /scan-output --output-filename 10.3.1.112_1.sarif --organization-id "${{ github.repository_owner }}" --project-id "${{ github.repository }}" --settings /settings/settings.yaml
+          docker run -v ${PWD}/docs/samples/nessus:/scan-input -v ${PWD}/docs/samples/settings:/settings -v ${{ env.SCAN_DIRECTORY }}:/scan-output pumasecurity/amaroq:${{ env.VERSION }} amaroq --tool Nessus --current /scan-input/10.3.1.112_2.nessus --output-directory /scan-output --output-filename 10.3.1.112_2.sarif --organization-id "${{ github.repository_owner }}" --project-id "${{ github.repository }}" --settings /settings/settings.yaml --previous /scan-input/10.3.1.112_1_previous.sarif
 
       - name: Snyk OSS
         shell: bash

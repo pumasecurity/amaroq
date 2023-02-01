@@ -43,4 +43,11 @@ settings:
         status: Accepted
         justification: False positive         
     thresholds:
-      - "RuleId = 'csharp/InsecureCipher' AND OccurrenceCount < 3 "      
+      - "RuleId = 'csharp/InsecureCipher' AND OccurrenceCount < 3 "
+  - tool: Nessus
+    version: 1.0.0
+    suppressions:
+      - expression: RuleId == '104743'
+        alias: andrew.guggenberger
+        status: Accepted
+        justification: False positive
